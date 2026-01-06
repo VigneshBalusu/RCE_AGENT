@@ -6,41 +6,45 @@ import time
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
-from contextlib import asynccontextmanager
 
-# --- LangChain & Chroma Imports ---
-from langchain_chroma import Chroma
-from langchain_huggingface import HuggingFaceEmbeddings
-from langchain_classic.retrievers import EnsembleRetriever
-from langchain_community.retrievers import BM25Retriever
-from langchain_core.documents import Document
-
-# --- CONFIGURATION ---
+# --- 1. CONFIGURATION ---
+# We do NOT import langchain/chroma here. That kills the server startup speed.
 MODEL_NAME = "all-MiniLM-L6-v2"
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 CHROMA_PATH = os.path.join(BASE_DIR, "chroma_db")
 N8N_WEBHOOK_URL = os.getenv("N8N_WEBHOOK_URL", "http://localhost:5678/webhook/chat")
 
-# Global variable to hold the retriever
+# Global cache for the AI Brain
 ensemble_retriever = None
 
+# --- 2. THE LAZY LOADER (The Magic Fix) ---
 def get_retriever():
     """
-    Lazy Loader: Only loads the heavy database/model when actually needed.
+    Imports and loads heavy libraries ONLY when needed.
+    This prevents the 'Port Scan Timeout' error on Render.
     """
     global ensemble_retriever
     
-    # If already loaded, return it immediately
+    # If we already loaded it, return it immediately
     if ensemble_retriever is not None:
         return ensemble_retriever
     
-    # Otherwise, load it now (First request only)
-    print("⏳ Loading Model & Database... (This happens only once)")
+    print("⏳ First request received. Starting Heavy Imports now...")
     
+    # --- HEAVY IMPORTS MOVED INSIDE HERE ---
+    from langchain_chroma import Chroma
+    from langchain_huggingface import HuggingFaceEmbeddings
+    from langchain_classic.retrievers import EnsembleRetriever
+    from langchain_community.retrievers import BM25Retriever
+    from langchain_core.documents import Document
+    # ---------------------------------------
+    
+    print("✅ Imports Done. Connecting to Database...")
+
     embeddings = HuggingFaceEmbeddings(model_name=MODEL_NAME)
 
     if not os.path.exists(CHROMA_PATH):
-        print("❌ Error: 'chroma_db' folder not found.")
+        print("❌ Error: 'chroma_db' folder not found on server.")
         return None
 
     db = Chroma(
@@ -68,17 +72,11 @@ def get_retriever():
         retrievers=[bm25_retriever, chroma_retriever],
         weights=[0.5, 0.5]
     )
-    print("✅ System Loaded!")
+    print("✅ System Fully Loaded and Ready!")
     return ensemble_retriever
 
-@asynccontextmanager
-async def lifespan(app: FastAPI):
-    # REMOVED the heavy loading from here to fix Timeout Error
-    print("🚀 Server starting up instantly...")
-    yield
-    print("🛑 Server Shutting Down...")
-
-app = FastAPI(lifespan=lifespan)
+# --- 3. FAST STARTUP ---
+app = FastAPI()
 
 app.add_middleware(
     CORSMiddleware,
@@ -102,15 +100,21 @@ def extract_n8n_answer(data):
         return json.dumps(data)
     return str(data)
 
+# --- 4. ENDPOINTS ---
+
+@app.get("/")
+def health_check():
+    # Render checks this to know we are alive
+    return {"status": "online"}
+
 @app.post("/search")
 async def search_endpoint(request: QueryRequest):
-    print(f"\n🔎 Tool Query received: {request.query}")
+    print(f"\n🔎 Search Query: {request.query}")
     
-    # Load the model NOW if it's the first time
+    # This triggers the loading (might take 10s on the very first try)
     retriever = get_retriever()
     
     if not retriever:
-        # If database is missing or empty
         return {"response": "Database not initialized or empty."}
 
     try:
@@ -129,12 +133,8 @@ async def search_endpoint(request: QueryRequest):
 
 @app.post("/chat")
 async def chat_endpoint(request: QueryRequest):
-    print(f"\n📩 Query: {request.query}")
-    
-    # Load the model NOW if it's the first time
+    print(f"\n📩 Chat Query: {request.query}")
     retriever = get_retriever()
-    
-    start_total = time.time()
     
     if retriever:
         results = retriever.invoke(request.query)
@@ -163,4 +163,6 @@ async def chat_endpoint(request: QueryRequest):
         return {"response": f"Error: {e}"}
 
 if __name__ == "__main__":
-    uvicorn.run(app, host="0.0.0.0", port=10000)
+    # This matches Render's expectation for port 10000
+    port = int(os.environ.get("PORT", 10000))
+    uvicorn.run(app, host="0.0.0.0", port=port)

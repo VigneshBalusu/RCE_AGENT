@@ -11,3 +11,5 @@ streamlit
 requests
 rank_bm25
 sentence-transformers
+streamlit
+requests

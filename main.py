@@ -19,7 +19,12 @@ from langchain_core.documents import Document
 MODEL_NAME = "all-MiniLM-L6-v2"
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 CHROMA_PATH = os.path.join(BASE_DIR, "chroma_db")
-N8N_WEBHOOK_URL = "http://localhost:5678/webhook/chat" # Ensure this matches your n8n URL
+
+# ✅ DEPLOYMENT UPDATE: Read URL from Environment Variable
+# If running on Render, it uses the "N8N_WEBHOOK_URL" variable you set in the dashboard.
+# If running locally, it falls back to "http://localhost:5678..."
+N8N_WEBHOOK_URL = os.getenv("N8N_WEBHOOK_URL", "http://localhost:5678/webhook/chat")
+
 # ---------------------
 
 ensemble_retriever = None
@@ -155,7 +160,7 @@ async def chat_endpoint(request: QueryRequest):
 
     # 2. AI GENERATION PHASE (n8n)
     try:
-        print("🚀 Sending to n8n...")
+        print(f"🚀 Sending to n8n at: {N8N_WEBHOOK_URL}")
         async with httpx.AsyncClient(timeout=30.0) as client: # 30s timeout
             n8n_response = await client.post(N8N_WEBHOOK_URL, json=payload)
         

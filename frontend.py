@@ -3,11 +3,15 @@ import requests
 import re
 
 # --- CONFIGURATION ---
-API_URL = "http://localhost:5678/webhook/chat"
+# This logic checks if you are online (Streamlit Cloud) or offline (Localhost)
+if "N8N_WEBHOOK_URL" in st.secrets:
+    API_URL = st.secrets["N8N_WEBHOOK_URL"]  # Use the secret URL in production
+else:
+    API_URL = "http://localhost:5678/webhook/chat" # Fallback for local testing
 
 # --- PAGE SETUP ---
 st.set_page_config(page_title="RCE AI Assistant", page_icon="🎓")
-st.title("RCE Agent")
+st.title("🎓 RCE Intelligent Assistant")
 
 # --- CSS TO HIDE GLITCHES ---
 st.markdown("""
@@ -25,10 +29,12 @@ if "messages" not in st.session_state:
 def clean_ai_response(text):
     if not text: return ""
     text = text.strip()
+    # Strategy 1: Double newline split
     parts = re.split(r'\n\s*\n', text)
     if len(parts) == 2:
         if parts[0].strip()[:20] == parts[1].strip()[:20]:
             return parts[0].strip()
+    # Strategy 2: Mirror check
     mid = len(text) // 2
     first_half = text[:mid].strip()
     second_half = text[mid:].strip()
@@ -37,7 +43,6 @@ def clean_ai_response(text):
     return text
 
 # --- DISPLAY HISTORY ---
-# This loops through past messages and paints them first
 for message in st.session_state.messages:
     with st.chat_message(message["role"]):
         st.markdown(message["content"])
@@ -45,40 +50,36 @@ for message in st.session_state.messages:
 # --- MAIN CHAT LOGIC ---
 if prompt := st.chat_input("Ask about Syllabus, Fees, or Faculty..."):
     
-    # 1. Display User Message immediately
+    # 1. Display User Message
     with st.chat_message("user"):
         st.markdown(prompt)
     st.session_state.messages.append({"role": "user", "content": prompt})
 
-    # 2. Handle the Assistant Response
+    # 2. Assistant Response
     with st.chat_message("assistant"):
         
-        # ✅ FIX: Create a dedicated placeholder for the spinner/text
-        # This forces Streamlit to treat this area as "fresh"
+        # Create a placeholder to contain the spinner and prevent ghosting
         response_placeholder = st.empty()
-        
         full_response = ""
         
-        # 3. Run the "Thinking" Spinner inside the placeholder
+        # 3. Run the logic inside the placeholder
         with response_placeholder.container():
             with st.spinner("Searching official records..."):
                 try:
-                    # Call the API
                     response = requests.post(API_URL, json={"query": prompt})
                     
                     if response.status_code == 200:
                         data = response.json()
+                        # Handle different n8n output formats safely
                         raw_text = data.get('output', "⚠️ No response text.") or data.get('response', "")
                         
-                        # Apply Cleaning
                         full_response = clean_ai_response(raw_text)
                     else:
                         full_response = f"⚠️ Server Error: {response.status_code}"
                 except Exception as e:
                     full_response = f"❌ Connection Error: {e}"
 
-        # 4. Final Display (Overwrites the spinner container)
-        # We check if we actually have text to avoid printing empty bubbles
+        # 4. Final Display (Overwrites the spinner)
         if full_response:
             response_placeholder.markdown(full_response)
             st.session_state.messages.append({"role": "assistant", "content": full_response})

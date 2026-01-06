@@ -1,0 +1,13 @@
+fastapi
+uvicorn
+httpx
+langchain-chroma
+langchain-huggingface
+langchain-community
+langchain-classic
+chromadb
+pydantic
+streamlit
+requests
+rank_bm25
+sentence-transformers

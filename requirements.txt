@@ -1,15 +1,11 @@
+--extra-index-url https://download.pytorch.org/whl/cpu
 fastapi
 uvicorn
 httpx
+pydantic
 langchain-chroma
 langchain-huggingface
 langchain-community
-langchain-classic
 chromadb
-pydantic
-streamlit
-requests
 rank_bm25
-sentence-transformers
-streamlit
-requests
+torch

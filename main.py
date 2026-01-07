@@ -112,5 +112,6 @@ async def search_endpoint(request: QueryRequest):
         return {"response": f"Server Error: {str(e)}"}
 
 if __name__ == "__main__":
-    port = int(os.environ.get("PORT", 10000))
+    # CHANGED DEFAULT PORT TO 8000 TO MATCH N8N
+    port = int(os.environ.get("PORT", 8000))
     uvicorn.run(app, host="0.0.0.0", port=port)

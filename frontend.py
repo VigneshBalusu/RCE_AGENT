@@ -3,13 +3,11 @@ import requests
 import re
 
 # --------------------------------------------------
-# CONFIGURATION (SAFE FOR LOCAL + CLOUD)
+# CONFIGURATION
 # --------------------------------------------------
-try:
-    API_URL = "https://n8n-production-19b7.up.railway.app/webhook/chat"  # Streamlit Cloud
-except Exception:
-    API_URL = "http://localhost:5678/webhook/chat"  # Local fallback
-
+# DIRECT CONNECTION: Streamlit -> Railway n8n
+# This is the "Production" setup.
+API_URL = "https://n8n-production-19b7.up.railway.app/webhook/chat"
 
 # --------------------------------------------------
 # PAGE SETUP
@@ -22,10 +20,7 @@ st.set_page_config(
 
 st.title("🎓 RCE Intelligent Assistant")
 
-
-# --------------------------------------------------
-# CSS (CLEAN UI)
-# --------------------------------------------------
+# Clean UI CSS
 st.markdown(
     """
     <style>
@@ -36,94 +31,68 @@ st.markdown(
     unsafe_allow_html=True
 )
 
-
 # --------------------------------------------------
 # SESSION STATE
 # --------------------------------------------------
 if "messages" not in st.session_state:
     st.session_state.messages = []
 
-
 # --------------------------------------------------
-# CLEANER FUNCTION (REMOVES DUPLICATE / MIRRORED TEXT)
+# HELPER: CLEAN RESPONSE
 # --------------------------------------------------
 def clean_ai_response(text: str) -> str:
-    if not text:
-        return ""
-
+    if not text: return ""
     text = text.strip()
-
-    # Strategy 1: Remove duplicated blocks
     parts = re.split(r'\n\s*\n', text)
-    if len(parts) == 2:
-        if parts[0].strip()[:25] == parts[1].strip()[:25]:
-            return parts[0].strip()
-
-    # Strategy 2: Mirror detection
-    mid = len(text) // 2
-    first_half = text[:mid].strip()
-    second_half = text[mid:].strip()
-
-    if len(text) > 40 and second_half.startswith(first_half[:30]):
-        return first_half
-
+    if len(parts) == 2 and parts[0].strip()[:25] == parts[1].strip()[:25]:
+        return parts[0].strip()
     return text
 
-
 # --------------------------------------------------
-# DISPLAY CHAT HISTORY
+# DISPLAY HISTORY
 # --------------------------------------------------
 for message in st.session_state.messages:
     with st.chat_message(message["role"]):
         st.markdown(message["content"])
-
 
 # --------------------------------------------------
 # MAIN CHAT LOGIC
 # --------------------------------------------------
 if prompt := st.chat_input("Ask about syllabus, fees, faculty, admissions..."):
 
-    # Show user message
+    # 1. Show User Message
     with st.chat_message("user"):
         st.markdown(prompt)
+    st.session_state.messages.append({"role": "user", "content": prompt})
 
-    st.session_state.messages.append(
-        {"role": "user", "content": prompt}
-    )
-
-    # Assistant response
+    # 2. Get Assistant Response
     with st.chat_message("assistant"):
         response_placeholder = st.empty()
-        final_response = ""
+        
+        with st.spinner("Processing request..."):
+            try:
+                # DIRECT CALL TO N8N
+                response = requests.post(
+                    API_URL,
+                    json={"query": prompt},
+                    timeout=30  # Wait up to 30s for n8n + Python DB
+                )
 
-        with response_placeholder.container():
-            with st.spinner("Searching official records..."):
-                try:
-                    response = requests.post(
-                        API_URL,
-                        json={"query": prompt},
-                        timeout=30
+                if response.status_code == 200:
+                    data = response.json()
+                    # Check common JSON keys n8n might return
+                    raw_text = (
+                        data.get("output") 
+                        or data.get("response") 
+                        or data.get("text") 
+                        or "⚠️ No 'output' key in n8n response."
                     )
+                    final_response = clean_ai_response(raw_text)
+                else:
+                    final_response = f"⚠️ n8n Error: {response.status_code}"
 
-                    if response.status_code == 200:
-                        data = response.json()
+            except requests.exceptions.RequestException as e:
+                final_response = f"❌ Connection Error: Could not reach n8n.\nError: {e}"
 
-                        raw_text = (
-                            data.get("output")
-                            or data.get("response")
-                            or "⚠️ No response received."
-                        )
-
-                        final_response = clean_ai_response(raw_text)
-
-                    else:
-                        final_response = f"⚠️ Server Error: {response.status_code}"
-
-                except requests.exceptions.RequestException as e:
-                    final_response = f"❌ Connection Error: {e}"
-
-        if final_response:
-            response_placeholder.markdown(final_response)
-            st.session_state.messages.append(
-                {"role": "assistant", "content": final_response}
-            )
+        response_placeholder.markdown(final_response)
+        st.session_state.messages.append({"role": "assistant", "content": final_response})

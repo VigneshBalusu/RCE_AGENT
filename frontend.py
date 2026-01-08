@@ -6,7 +6,7 @@ import re
 # CONFIGURATION (SAFE FOR LOCAL + CLOUD)
 # --------------------------------------------------
 try:
-    API_URL = st.secrets["N8N_WEBHOOK_URL"]  # Streamlit Cloud
+    API_URL = "https://n8n-production-19b7.up.railway.app/webhook/chat"  # Streamlit Cloud
 except Exception:
     API_URL = "http://localhost:5678/webhook/chat"  # Local fallback
 

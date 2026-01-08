@@ -5,7 +5,12 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 
-# --- 1. CLOUD DATABASE FIX (Keep this!) ---
+# --- 1. CONFIGURATION ---
+MODEL_NAME = "all-MiniLM-L6-v2"
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+CHROMA_PATH = os.path.join(BASE_DIR, "chroma_db")
+
+# --- 2. CLOUD COMPATIBILITY (Safety Check) ---
 try:
     __import__('pysqlite3')
     sys.modules['sqlite3'] = sys.modules.pop('pysqlite3')
@@ -13,12 +18,7 @@ try:
 except ImportError:
     print("💻 Local Environment: Using default sqlite3")
 
-# --- 2. CONFIGURATION ---
-MODEL_NAME = "all-MiniLM-L6-v2"
-BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-CHROMA_PATH = os.path.join(BASE_DIR, "chroma_db")
-
-# Global Retriever Cache
+# --- 3. RETRIEVER SETUP ---
 ensemble_retriever = None
 
 def get_retriever():
@@ -33,7 +33,11 @@ def get_retriever():
     from langchain_core.documents import Document
 
     embeddings = HuggingFaceEmbeddings(model_name=MODEL_NAME)
-    if not os.path.exists(CHROMA_PATH): return None
+    
+    # Check if DB exists
+    if not os.path.exists(CHROMA_PATH):
+        print(f"❌ Error: Database not found at {CHROMA_PATH}")
+        return None
 
     db = Chroma(persist_directory=CHROMA_PATH, embedding_function=embeddings)
     existing_data = db.get()
@@ -46,9 +50,10 @@ def get_retriever():
         search_text = text + " " + " ".join(str(v) for v in meta.values() if v)
         doc_objects.append(Document(page_content=search_text, metadata=meta))
 
+    # --- THE FIX: k=10 (Reads more data) ---
     bm25_retriever = BM25Retriever.from_documents(doc_objects)
-    bm25_retriever.k = 3
-    chroma_retriever = db.as_retriever(search_kwargs={"k": 3})
+    bm25_retriever.k = 10
+    chroma_retriever = db.as_retriever(search_kwargs={"k": 10})
 
     ensemble_retriever = EnsembleRetriever(
         retrievers=[bm25_retriever, chroma_retriever],
@@ -70,23 +75,26 @@ class QueryRequest(BaseModel):
 
 @app.get("/")
 def health_check():
-    return {"status": "Database Service Online"}
+    return {"status": "Database Online"}
 
-# --- THE ONLY ENDPOINT YOU NEED ---
 @app.post("/search")
 def search_database_only(request: QueryRequest):
-    """
-    Called by n8n (Railway) to get context.
-    """
-    print(f"📥 DB Search Request: {request.query}", flush=True)
+    print(f"📥 DB Search: {request.query}", flush=True)
     retriever = get_retriever()
     if not retriever:
-        return {"results": "Database not initialized."}
+        return {"results": ["Database Error: Not found."]}
     
     results = retriever.invoke(request.query)
-    # Returns a list of strings for n8n to format
-    return {"results": [doc.page_content for doc in results[:3]]}
+    # Return top 6 results to give the AI enough info
+    return {"results": [doc.page_content for doc in results[:6]]}
+
+import os
+import uvicorn
+
+# ... (rest of your code) ...
 
 if __name__ == "__main__":
+    # Get the port from the environment, default to 8000 if running locally
     port = int(os.environ.get("PORT", 8000))
+    # host="0.0.0.0" is CRITICAL for Render
     uvicorn.run(app, host="0.0.0.0", port=port)

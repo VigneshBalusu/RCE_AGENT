@@ -79,10 +79,11 @@ if prompt := st.chat_input("Ask about syllabus, fees, faculty, admissions..."):
         
         with st.spinner("Processing request..."):
             try:
+             # DIRECT CALL TO N8N
                 response = requests.post(
                     API_URL,
                     json={"query": prompt},
-                    timeout=30
+                    timeout=120  # <--- CHANGED from 30 to 120
                 )
 
                 if response.status_code == 200:

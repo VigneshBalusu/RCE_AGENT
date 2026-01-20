@@ -1,107 +1,200 @@
 import streamlit as st
 import requests
-import re
-import os
+import base64
+import time
 
 # --------------------------------------------------
-# PAGE CONFIG (Must be first)
+# 1. PAGE CONFIG & MODERN STYLING
 # --------------------------------------------------
 st.set_page_config(
-    page_title="RCE AI Assistant",
-    page_icon="🎓",
+    page_title="RCE Voice Assistant",
+    page_icon="🎙️",
     layout="centered"
 )
 
+st.markdown("""
+    <style>
+    /* Hide Header & Footer */
+    header, footer, .stDeployButton {display:none !important;}
+    
+    /* Center the Main Interface */
+    .block-container {
+        padding-top: 2rem;
+        text-align: center;
+    }
+    
+    /* Status Badge */
+    .status-badge {
+        background-color: #1e1e1e;
+        color: #00FF94;
+        padding: 8px 16px;
+        border-radius: 20px;
+        border: 1px solid #333;
+        font-family: monospace;
+        font-size: 14px;
+        margin-bottom: 20px;
+        display: inline-block;
+    }
+    
+    /* AI Response Card */
+    .ai-card {
+        background-color: #262730;
+        border-left: 5px solid #FF4B4B;
+        padding: 20px;
+        border-radius: 10px;
+        margin-top: 20px;
+        text-align: left;
+        box-shadow: 0 4px 6px rgba(0,0,0,0.3);
+    }
+    
+    /* Chat Input Styling */
+    .stChatInput {
+        position: fixed;
+        bottom: 20px;
+        left: 50%;
+        transform: translateX(-50%);
+        width: 80%;
+        max-width: 700px;
+        z-index: 100;
+    }
+    </style>
+""", unsafe_allow_html=True)
+
 # --------------------------------------------------
-# UNIVERSAL CONNECTION LOGIC
+# 2. CONFIGURATION
 # --------------------------------------------------
-# 1. Try to find the Production URL in Streamlit Secrets (Online)
-# 2. If not found, default to Localhost (Offline/Testing)
 try:
     API_URL = st.secrets["N8N_WEBHOOK_URL"]
-    connection_status = "☁️ Cloud Mode"
-except (FileNotFoundError, KeyError):
+except:
     API_URL = "http://localhost:5678/webhook/chat"
-    connection_status = "💻 Local Mode"
 
-# --------------------------------------------------
-# UI SETUP
-# --------------------------------------------------
-st.title("🎓 RCE Intelligent Assistant")
-st.caption(f"Status: {connection_status}")  # Helpful indicator
-
-# Clean UI CSS
-st.markdown(
-    """
-    <style>
-    .stDeployButton {display:none;}
-    footer {visibility: hidden;}
-    </style>
-    """,
-    unsafe_allow_html=True
-)
-
-# --------------------------------------------------
-# SESSION STATE
-# --------------------------------------------------
+# Initialize Session State
 if "messages" not in st.session_state:
     st.session_state.messages = []
+if "last_audio" not in st.session_state:
+    st.session_state.last_audio = None
+if "status" not in st.session_state:
+    st.session_state.status = "Ready"
 
 # --------------------------------------------------
-# HELPER: CLEAN RESPONSE
+# 3. HELPER FUNCTION (With Error Handling)
 # --------------------------------------------------
-def clean_ai_response(text: str) -> str:
-    if not text: return ""
-    text = text.strip()
-    parts = re.split(r'\n\s*\n', text)
-    if len(parts) == 2 and parts[0].strip()[:25] == parts[1].strip()[:25]:
-        return parts[0].strip()
-    return text
+def query_n8n(payload, mode="text"):
+    try:
+        if mode == "voice":
+            files = {'file': ('voice.wav', payload, 'audio/wav')}
+            data = {'voice_mode': 'true'}
+            return requests.post(API_URL, files=files, data=data, timeout=120)
+        else:
+            return requests.post(API_URL, json={"query": payload, "voice_mode": False}, timeout=120)
+    except Exception as e:
+        st.error(f"Network Error: {e}")
+        return None
 
 # --------------------------------------------------
-# DISPLAY HISTORY
+# 4. MAIN UI
 # --------------------------------------------------
-for message in st.session_state.messages:
-    with st.chat_message(message["role"]):
-        st.markdown(message["content"])
+st.title("🎙️ RCE Assistant")
+
+# Status Indicator
+status_color = "#00FF94" if st.session_state.status == "Ready" else "#FF4B4B"
+st.markdown(f"<div><span class='status-badge' style='color:{status_color}'>● {st.session_state.status}</span></div>", unsafe_allow_html=True)
+
+# --- A. VOICE INPUT ---
+voice_disabled = (st.session_state.status != "Ready")
+audio_value = st.audio_input("Tap to Speak")
+
+# --- B. TEXT INPUT ---
+text_query = st.chat_input("Type a message...", disabled=voice_disabled)
 
 # --------------------------------------------------
-# MAIN CHAT LOGIC
+# 5. LOGIC ENGINE
 # --------------------------------------------------
-if prompt := st.chat_input("Ask about syllabus, fees, faculty, admissions..."):
 
-    with st.chat_message("user"):
-        st.markdown(prompt)
-    st.session_state.messages.append({"role": "user", "content": prompt})
+# LOGIC 1: HANDLE VOICE
+if audio_value is not None:
+    # Only run if the audio is NEW
+    if st.session_state.last_audio != audio_value:
+        st.session_state.last_audio = audio_value
+        st.session_state.status = "Thinking..."
+        st.rerun() 
 
-    with st.chat_message("assistant"):
-        response_placeholder = st.empty()
+    # Processing State
+    if st.session_state.status == "Thinking...":
         
-        with st.spinner("Processing request..."):
-            try:
-             # DIRECT CALL TO N8N
-                response = requests.post(
-                    API_URL,
-                    json={"query": prompt},
-                    timeout=120  # <--- CHANGED from 30 to 120
-                )
+        # 1. Play User Audio
+        audio_bytes = audio_value.read()
+        with st.expander("Your Audio", expanded=False):
+            st.audio(audio_bytes, format="audio/wav")
 
-                if response.status_code == 200:
+        # 2. Send to AI
+        with st.spinner("Processing Voice..."):
+            response = query_n8n(audio_bytes, mode="voice")
+
+        # 3. Handle Response
+        if response and response.status_code == 200:
+            st.session_state.status = "Speaking..."
+            content_type = response.headers.get('Content-Type', '')
+
+            # Case A: Audio File Returned (Binary)
+            if 'audio' in content_type or 'application/octet-stream' in content_type:
+                st.markdown("<div class='ai-card'><h3>🔊 AI Speaking...</h3></div>", unsafe_allow_html=True)
+                st.audio(response.content, format="audio/mp3", autoplay=True)
+                st.session_state.messages.append({"role": "assistant", "type": "audio", "data": "Audio Response"})
+            
+            # Case B: Text JSON Returned
+            else:
+                try:
                     data = response.json()
                     if isinstance(data, list): data = data[0]
-                    
-                    raw_text = (
-                        data.get("output") 
-                        or data.get("response") 
-                        or data.get("text") 
-                        or "⚠️ No 'output' key in n8n response."
-                    )
-                    final_response = clean_ai_response(raw_text)
-                else:
-                    final_response = f"⚠️ n8n Error: {response.status_code}"
+                    text = data.get("output") or "Done"
+                    st.markdown(f"<div class='ai-card'><b>AI:</b> {text}</div>", unsafe_allow_html=True)
+                    st.session_state.messages.append({"role": "assistant", "type": "text", "data": text})
+                except Exception as e:
+                    # DEBUGGING: If JSON fails, show exactly what n8n sent
+                    st.error("Error: n8n did not return valid JSON.")
+                    with st.expander("See Raw Response"):
+                        st.write(response.text)
 
-            except requests.exceptions.RequestException:
-                final_response = f"❌ Connection Error: Could not reach n8n at {API_URL}"
+        else:
+            st.error("Connection Failed or Timeout")
 
-        response_placeholder.markdown(final_response)
-        st.session_state.messages.append({"role": "assistant", "content": final_response})
+        # 4. Reset Status
+        st.session_state.status = "Ready"
+
+# LOGIC 2: HANDLE TEXT
+elif text_query:
+    st.session_state.status = "Thinking..."
+    st.session_state.messages.append({"role": "user", "type": "text", "data": text_query})
+    
+    with st.spinner("Thinking..."):
+        response = query_n8n(text_query, mode="text")
+        
+    if response and response.status_code == 200:
+        try:
+            data = response.json()
+            if isinstance(data, list): data = data[0]
+            text = data.get("output") or "Done"
+            
+            st.markdown(f"<div class='ai-card'><b>AI:</b> {text}</div>", unsafe_allow_html=True)
+            st.session_state.messages.append({"role": "assistant", "type": "text", "data": text})
+        except Exception:
+             st.error("Error: n8n did not return valid JSON.")
+             with st.expander("See Raw Response"):
+                 st.write(response.text)
+    else:
+        st.error("Connection Failed")
+    
+    st.session_state.status = "Ready"
+    st.rerun()
+
+# --------------------------------------------------
+# 6. HISTORY DRAWER
+# --------------------------------------------------
+with st.expander("View Conversation History"):
+    for msg in st.session_state.messages:
+        icon = "👤" if msg['role'] == "user" else "🤖"
+        if msg.get("type") == "audio":
+            st.write(f"{icon} [Audio Message]")
+        else:
+            st.write(f"{icon} {msg.get('data')}")

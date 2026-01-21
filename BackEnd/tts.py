@@ -8,7 +8,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 
 # --- CONFIGURATION ---
-# Create a folder for temporary audio files
+# Create a folder for temporary audio files to prevent memory crashes
 OUTPUT_DIR = "generated_audio"
 os.makedirs(OUTPUT_DIR, exist_ok=True)
 
@@ -23,7 +23,7 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Voice Mapping (Easy to switch languages)
+# Voice Mapping (Your Language Logic)
 VOICE_MAP = {
     "en": "en-IN-NeerjaNeural",   # English (India)
     "te": "te-IN-ShrutiNeural",    # Telugu
@@ -46,7 +46,7 @@ async def generate_audio(request: TTSRequest):
         # 1. Select Voice
         voice = VOICE_MAP.get(request.lang, VOICE_MAP["en"])
         
-        # 2. Create Unique Filename (Prevents conflicts)
+        # 2. Create Unique Filename (Prevents conflicts between users)
         filename = f"{uuid.uuid4()}.mp3"
         filepath = os.path.join(OUTPUT_DIR, filename)
         
@@ -64,6 +64,7 @@ async def generate_audio(request: TTSRequest):
 if __name__ == "__main__":
     # --- CRITICAL FIX FOR RENDER ---
     # Render assigns a random port. We MUST listen on that port.
+    # We fallback to 8000 only if running locally.
     port = int(os.environ.get("PORT", 8000))
     
     print("---------------------------------------------------------")

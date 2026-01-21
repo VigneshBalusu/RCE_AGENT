@@ -1,0 +1,27 @@
+# --- PyTorch CPU Version (Reduces Slug Size significantly) ---
+--extra-index-url https://download.pytorch.org/whl/cpu
+
+# --- Core Web API ---
+fastapi
+uvicorn
+httpx
+pydantic
+
+# --- LangChain Ecosystem ---
+langchain-classic
+langchain-community
+langchain-huggingface
+langchain-chroma
+
+# --- Vector DB & Retrieval ---
+chromadb
+rank_bm25
+
+# --- Machine Learning ---
+torch
+sentence-transformers
+
+# --- Cloud Compatibility (CRITICAL FIX) ---
+# Required for ChromaDB on Render/Linux to avoid "SQLite version too old" errors
+pysqlite3-binary
+edge-tts

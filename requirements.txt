@@ -1,12 +1,26 @@
+# --- PyTorch (CPU Version) ---
+# This reduces the deployment size by ~500MB (Critical for free tier)
 --extra-index-url https://download.pytorch.org/whl/cpu
-fastapi
-uvicorn
-httpx
-pydantic
-langchain-chroma
-langchain-huggingface
-langchain-community
-chromadb
-rank_bm25
 torch
 sentence-transformers
+
+# --- Core Web Framework ---
+fastapi
+uvicorn
+pydantic
+httpx
+
+# --- RAG & AI (For main.py) ---
+langchain
+langchain-community
+langchain-huggingface
+langchain-chroma
+chromadb
+rank_bm25
+
+# --- Voice & Audio (For tts.py) ---
+edge-tts
+
+# --- Cloud Fixes (CRITICAL) ---
+# Required for ChromaDB to run on Render/Linux
+pysqlite3-binary

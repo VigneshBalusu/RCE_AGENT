@@ -1,34 +1,42 @@
-from fastapi import FastAPI, HTTPException
-from fastapi.responses import Response
-from fastapi.middleware.cors import CORSMiddleware  # <--- Added
-from pydantic import BaseModel
-import edge_tts
+import os
 import uvicorn
-import io
+import uuid
+import edge_tts
+from fastapi import FastAPI, HTTPException
+from fastapi.responses import FileResponse
+from fastapi.middleware.cors import CORSMiddleware
+from pydantic import BaseModel
 
 # --- CONFIGURATION ---
-app = FastAPI(title="RCE Voice Service (Edge TTS)")
+# Create a folder for temporary audio files to prevent memory crashes
+OUTPUT_DIR = "generated_audio"
+os.makedirs(OUTPUT_DIR, exist_ok=True)
 
-# 1. Add CORS (Safety Net for Web Calls)
+app = FastAPI(title="RCE Voice Service")
+
+# 1. Add CORS (Essential for n8n & External Access)
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # Allows all origins
+    allow_origins=["*"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
 
-# Voice Mapping (Official Edge TTS Voices)
+# Voice Mapping (Your Language Logic)
 VOICE_MAP = {
     "en": "en-IN-NeerjaNeural",   # English (India)
     "te": "te-IN-ShrutiNeural",    # Telugu
     "hi": "hi-IN-SwaraNeural"      # Hindi
 }
 
-# Define the Input Format
 class TTSRequest(BaseModel):
     text: str
     lang: str = "en"  # Default to English
+
+@app.get("/")
+def health_check():
+    return {"status": "Voice API Online", "provider": "Edge-TTS"}
 
 @app.post("/tts")
 async def generate_audio(request: TTSRequest):
@@ -38,25 +46,30 @@ async def generate_audio(request: TTSRequest):
         # 1. Select Voice
         voice = VOICE_MAP.get(request.lang, VOICE_MAP["en"])
         
-        # 2. Generate Audio
-        communicate = edge_tts.Communicate(request.text, voice)
+        # 2. Create Unique Filename (Prevents conflicts between users)
+        filename = f"{uuid.uuid4()}.mp3"
+        filepath = os.path.join(OUTPUT_DIR, filename)
         
-        # 3. Capture Audio Bytes efficiently
-        audio_data = b""
-        async for chunk in communicate.stream():
-            if chunk["type"] == "audio":
-                audio_data += chunk["data"]
-
-        # 4. Return Audio (MP3 is the default format for Edge TTS)
-        return Response(content=audio_data, media_type="audio/mpeg")
+        # 3. Generate Audio & Save to Disk
+        communicate = edge_tts.Communicate(request.text, voice)
+        await communicate.save(filepath)
+        
+        # 4. Return File (Better for n8n than streaming bytes)
+        return FileResponse(filepath, media_type="audio/mpeg", filename="voice_output.mp3")
 
     except Exception as e:
         print(f"❌ Error: {e}")
         raise HTTPException(status_code=500, detail=str(e))
 
 if __name__ == "__main__":
-    # Ensure this port (8005) is different from your RAG API (8000)
+    # --- CRITICAL FIX FOR RENDER ---
+    # Render assigns a random port. We MUST listen on that port.
+    # We fallback to 8000 only if running locally.
+    port = int(os.environ.get("PORT", 8000))
+    
     print("---------------------------------------------------------")
-    print("🚀 TTS Server Running on Port 8005")
+    print(f"🚀 TTS Server Running on Port {port}")
     print("---------------------------------------------------------")
-    uvicorn.run(app, host="0.0.0.0", port=8005)
+    
+    # host="0.0.0.0" is MANDATORY for Cloud
+    uvicorn.run(app, host="0.0.0.0", port=port)

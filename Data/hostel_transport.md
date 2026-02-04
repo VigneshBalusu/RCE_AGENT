@@ -15,28 +15,41 @@ The college operates an extensive fleet covering Eluru, Vijayawada, Nuzvid, and 
 
 | Bus No | Route / Major Stops | Start Time | End Time |
 | :--- | :--- | :--- | :--- |
-| **1** | Satrampadu, Sanivarapu pet, Dugirala, Bypass, RCE | 8:15 AM | 6:00 PM |
-| **2** | Kandrigudem, Tangelamudi, 12Tap Center, Ashok Nagar, Fire Station, New Bus stop, Vatluru | 8:00 AM | 6:30 PM |
-| **3** | **Vijayawada**, Kesarapalli, Gudavalli, Gannavaram, Pedaavutapalli, Pottipadu, Veeravalli, Veleru | 7:15 AM | 6:30 PM |
-| **4** | Madepalli, Vangayagudem, Old Bus stop, Karra vantena, Mini Bypass | 7:00 AM | 6:30 PM |
-| **5** | **Nuzvid**, Meerjapuram, Madicherla, Bogapuram, Ammapalem, Kopaka, Bypass | 7:15 AM | 6:30 PM |
-| **6** | Kandrigudem, Tangelamudi, 12Tap Center, Ashok Nagar, Fire Station, New Bus stop, Vatluru | 8:00 AM | 6:30 PM |
-| **7** | Kandrigudem, Tangelamudi, 12Tap Center, Ashok Nagar, Fire Station, New Bus stop, Vatluru | 8:00 AM | 6:30 PM |
-| **8** | Gundugolanu, Denduluru, Asram, Old Bus stop, Karra vantena, Mini Bypass | 7:15 AM | 6:30 PM |
-| **9** | **Jangareddygudem**, Tadekelapudi, Vegiwada, Monduru, Gangannagudem, Galayagudem, Gopanapalem, Vegavaram, Somavarapupadu | 7:00 AM | 6:30 PM |
-| **10** | Kandrigudem, Tangelamudi, 12Tap Center, Ashok Nagar, Fire Station, New Bus stop, Vatluru | 8:00 AM | 6:30 PM |
-| **11** | Kallacheruvu, Saagipadu, Tadekelapudi, Vegiwada, Monduru, Galayagudem, Gopanapalem, Vegavaram, Somavarapupadu | 7:15 AM | 6:45 PM |
-| **12** | Chataparru, Vangayagudem, Old Bus stop, Karra vantena, Mini Bypass | 7:50 AM | 6:30 PM |
-| **13** | Satrampadu, Sanivarapu pet, Dugirala, Bypass | 8:00 AM | 6:30 PM |
-| **14** | Satyavolu, Pedapadu, Kotturu, Jute Mill, Mini Bypass | 7:15 AM | 6:20 PM |
-| **15** | **Dwarakatirimala**, Bhimadolu, Gundugolanu, Denduluru, Asram, Old Bus stop, Karra vantena, Mini Bypass | 7:00 AM | 6:45 PM |
-| **16** | Bhujabalapatnam, Kaikaluru, Sriparru, Madepalli, Eluru | 7:15 AM | 6:45 PM |
-| **17** | Kandrigudem, Tangelamudi, 12Tap Center, Ashok Nagar, Fire Station, New Bus stop, Vatluru | 8:00 AM | 6:30 PM |
-| **18** | **Gudiwada**, Arugolanu, Kanumolu, Hanuman Junction, Bommuluru, Kalaparru | 7:00 AM | 6:45 PM |
-| **19** | Mirjapuram, Madicharla, Bhogapuram, Koppaka | 7:15 AM | 6:20 PM |
-| **20** | **Chintalapudi**, Lingapalem, Dharmajigudem, Ramachandrapuram, Janampeta | 7:00 AM | 6:20 PM |
-| **21** | Rangapuram, Kuchimpudi, Gopannapalem, Tangellamudi, RTO Office | 7:15 AM | 6:30 PM |
-| **22** | Bogolu, Timmakkapalem, Kalaray Gudem, Ayyaparaj Gudem, Bapiraj Gudem, Ramachandrapuram, Vijayarai, Janampeta | 7:15 AM | 6:30 PM |
+| **1** | Satrampadu, Sanivarapu peta, Duggirala, Bypass, RCE | Contact Transport Dept | Contact Transport Dept |
+| **2** | Kandrika Gudem, Tangellamudi, 12Tap Center, Ashok Nagar, Fire Station, New Bus Stop, Vatluru, RCE | Contact Transport Dept | Contact Transport Dept |
+| **3** | Vijayawada, Kesarapalli, Gudavalli, Gannavaram, Pedaavutapalli, Pottipadu, Veeravalli, Hanumanjunction, RCE | Contact Transport Dept | Contact Transport Dept |
+| **4** | Madepalli, Vangayagudem, Goods Shed, Old Bus Stand, Karrala Vanthena, Mini Bypass, RCE | Contact Transport Dept | Contact Transport Dept |
+| **5** | Nuzvid, Tukkuluru, Morsapudi, Kottapalli, Hanuman Junction, Bommuluru, RCE | Contact Transport Dept | Contact Transport Dept |
+| **6** | Kandrika Gudem, Tangellamudi, 12Tap Center, Ashok Nagar, Fire Station, New Bus Stop, Vatluru, RCE | Contact Transport Dept | Contact Transport Dept |
+| **8** | Goods Shed, Vasanthamahal, Jute Mill, Mini Bypass, RCE | Contact Transport Dept | Contact Transport Dept |
+| **9** | Jangareddygudem, Devulapalli, Tadikalapudi, Vegiwada, Gangannagudem, Galayagudem, Bypass, RCE | Contact Transport Dept | Contact Transport Dept |
+| **10** | Kandrika Gudem, Tangellamudi, 12Tap Center, Ashok Nagar, Fire Station, New Bus Stop, Vatluru, RCE | Contact Transport Dept | Contact Transport Dept |
+| **12** | Kallacheruvu, Sagipadu, Tadikelapudi, Vegiwada, Galayagudem, Gopannapalem, Vegavaram, RCE | Contact Transport Dept | Contact Transport Dept |
+| **13** | Gundugolanu, Pothunuru, Dosapadu, Kovvali, Palagudem, Goods Shed, RCEE | Contact Transport Dept | Contact Transport Dept |
+| **14** | Satyavolu, Naidugudem, Pedapadu, Kothuru, Vangayagudem, Mini Bypass, RCE | Contact Transport Dept | Contact Transport Dept |
+| **15** | Dorasanipalle, Dwaraka Tirumala, Timmapuram, Pangidigudem, Bhimadole, Gundugolanu, RCE | Contact Transport Dept | Contact Transport Dept |
+| **16** | Bujabalapatnam, Atapaka, Kaikaluru, Durgamaheswarapuram, Sreeparru, RCEE | Contact Transport Dept | Contact Transport Dept |
+| **17** | Kandrika Gudem, Tangellamudi, 12Tap Center, Ashok Nagar, Fire Station, New Bus Stop, Vatluru, RCE | Contact Transport Dept | Contact Transport Dept |
+| **18** | Gudivada, Jonnapadu, Arugolanu, Kanumolu, Hanuman Junction, Bommuluru | Contact Transport Dept | Contact Transport Dept |
+| **19** | Meerjapuram, Madicherla, Bogapuram, Ammapalem, Pinakadimi, Koppaka, Pedakadimi, RCE | Contact Transport Dept | Contact Transport Dept |
+| **20** | Chinatalapudi, Fathimapuram, Lingapalem, Matangudem, Dharmajigudem, Ramachandrapuram, Nadipalli, Vijayarai, Prakashnagar, Janampet, RCE | Contact Transport Dept | Contact Transport Dept |
+| **21** | Rangapuram, Asannagudem, Polasagudem, Badarala, Kuchempudi, Pedavegi, Dibbagudem, Gopannapalem, Somavarapupadu, RCE | Contact Transport Dept | Contact Transport Dept |
+| **22** | Perugugudem, Ramaraogudem, Sriramavaram, Jogannapalem, Monduru, Galayagudem, Goppanapalem | Contact Transport Dept | Contact Transport Dept |
+| **23** | Madepalli, Chataparru, Vangayagudem, Goods Shed, Old Bus Stand, Karrala Vanthena, Mini Bypass, RCE | Contact Transport Dept | Contact Transport Dept |
+| **24** | Chataparru, Turpuveedi, Vasanthmahal, Karrala Vanthena, RCEE | Contact Transport Dept | Contact Transport Dept |
+| **25** | Gudivada, Jonnapadu, Arugolanu, Kanumolu, Hanuman Junction, Bommuluru, Kalaparru, RCE | Contact Transport Dept | Contact Transport Dept |
+| **26** | Tadepalligudem, Unguturu, Narayanapuram, Chebrole, Kaikaram, Pulla, Bhimadole, RCEE | Contact Transport Dept | Contact Transport Dept |
+| **27** | Satrampadu, Sanivarapu peta, Duggirala, Bypass, RCE | Contact Transport Dept | Contact Transport Dept |
+| **28** | Denduluru, Asram, JMJ School, Tangellamudi, BD Colony, RTO Office, RCEE | Contact Transport Dept | Contact Transport Dept |
+| **29** | Narasannapalem, Bogolu, Timmakkapalem, Kalaray Gudem, Ayyaparaj Gudem, Bapiraj Gudem, Ramachandrapuram, Nadipalli, Vijayarai, Prakashnagar, Janampet, RCE | Contact Transport Dept | Contact Transport Dept |
+| **30** | Kobarri Thota, Yalla Puram, Venkatapuram, Balvey, Velupucherla, Aankanagudem, Koppaka, Pinakadimi, RCEE | Contact Transport Dept | Contact Transport Dept |
+| **31** | Lingapalem, Matun Gudem, Dharmajigudem, Valasapalli, Ramachandrapuram, Vijayarai, Janampeta, RCEE | Contact Transport Dept | Contact Transport Dept |
+| **32** | Jonnapadu, Pottipadu, Ampapuram, Telaprolu, Veeravalli, Veleru, Hanuman Junction, Bommuluru, RCEE | Contact Transport Dept | Contact Transport Dept |
+| **33** | JRG Road, Tangellamudi, Ashok Nagar, Fire Station, New Bus Stand, Satrampadu, Vatluru, RCEE | Contact Transport Dept | Contact Transport Dept |
+| **34** | Chataparru, Madepalli, Vangayagudem, Goods Shed, Old Bus Stand, Karrala Vanthena, Mini Bypass, RCE | Contact Transport Dept | Contact Transport Dept |
+| **35** | Koppulavarri Gudem, Gangannagudem, Galayagudem, Gopannapalem, Vegavaram, Somavarapadu, RCEE | Contact Transport Dept | Contact Transport Dept |
+| **36** | Eastadavalli, K Kota, Adamilli, Tadikelapudi, Vegiwada, Monduru, Galayyagudem, Gopannapalem, Bypass, RCEE | Contact Transport Dept | Contact Transport Dept |
+| **37** | Sai Nagar, Vangayagudem, Goods Shed, Old Bus Stand, Karrala Vanthena, Mini Bypass, RCEE | Contact Transport Dept | Contact Transport Dept |
 
 * **Search Tag:** **Bus, bus transport, transport, travelling, bus timings, places, areas, regions**
 

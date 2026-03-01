@@ -1,76 +1,34 @@
-# Department of CSE - Artificial Intelligence & Data Science (AI&DS)
+# Department of Artificial Intelligence & Data Science (AI&DS) - Ramachandra College of Engineering (RCEE)
 
-## Scope of Document
-This document details the profile, academic focus, and infrastructure of the AI & Data Science specialization at Ramachandra College of Engineering (RCEE).
-**Use this data for:** "What is AI&DS?", "AI&DS Intake seats", "AI&DS Vision", "AI&DS Labs", "AI&DS Placements", "Data Science Syllabus".
+## Overview of AI&DS Department
+* **Keywords:** Artificial Intelligence, Data Science, AI&DS Profile, Intake Seats, Emerging Tech, AI Vision, Data Science Syllabus
 
 ## 1. Department Profile & Stats
-* **Department Name:** **Artificial Intelligence and Data Science (AI&DS)**
-* **Established:** **2020** (Started with 64 seats, increased to 120 to meet industry demand).
-* **Search Tags:** **AIDS_PROFILE, AI_DS_SEATS, AI_DS_INTAKE, DATA_SCIENCE_DEPT, EMERGING_TECH.**
-* **Intake Capacity:**
-    * **B.Tech (UG):** **120 Seats**.
-    * **M.Tech (PG):** **18 Seats**.
-* **Affiliation:** A specialized "Emerging Technology" branch, often functioning in synergy with the main CSE Department.
+* **Keywords:** AI&DS Department, Established 2020, BTech AI&DS Seats, MTech AI&DS Seats, Emerging Technology Branch
+* **Overview:** Established in 2020 as a specialized Emerging Technology branch functioning in synergy with CSE, the department has an intake capacity of 120 seats for B.Tech (UG) and 18 seats for M.Tech (PG).
 
-## 2. Vision & Mission (AI&DS)
-* **Search Tags:** **AIDS_VISION, AIDS_MISSION, AI_GOALS.**
-
-### Vision
-"To promote **Innovation centric education** in the field of Artificial Intelligence and Data Science, solving domain-specific challenges and assuming leadership in formulation of policies for **ethical and legal considerations**."
-
-### Mission
-1.  **Industry Readiness:** To give students **100% job placement** specifically in the AI market and make them Industry Ready.
-2.  **Certifications:** To impart training for valuable certifications in **Applied Machine Learning, Deep Learning, Computer Vision, and NLP**.
-3.  **Real-Time Projects:** To make students experts in the development of real-time projects using cutting-edge algorithms.
+## 2. Vision & Mission
+* **Keywords:** AI&DS Vision, AI&DS Mission, Innovation Education, Industry Readiness, Certifications, Real-Time Projects
+* **Vision:** To promote innovation-centric education in the field of Artificial Intelligence and Data Science, solving domain-specific challenges and assuming leadership in the formulation of policies for ethical and legal considerations.
+* **Mission:** To ensure students achieve 100% job placement by making them industry-ready, imparting training for valuable certifications (Applied Machine Learning, Deep Learning, Computer Vision, NLP), and building expertise through real-time projects using cutting-edge algorithms.
 
 ## 3. Leadership & Contact
-* **HOD :** **Dr. P.Sudhakar** (M.Tech, Ph.D).
-* **Search Tags:** **AIDS_HOD, CONTACT_AIDS, AI_COORDINATOR.**
-* **Contact Email:** hod-ai-ds@rcee.ac.in (Standardized) / admissions@rcee.ac.in
-* **Key Faculty / Counselors:**
-    * **Ms. Reshma Aman** (Assistant Professor).
-    * **Mr. K. Rajendhra** (Assistant Professor).
-    * **Mr. T. Sangeeth Chakravarthy** (Assistant Professor).
+* **Keywords:** AI&DS HOD, Dr. P. Sudhakar, AI Coordinator, Contact AI&DS, Faculty, Reshma Aman, K. Rajendhra, T. Sangeeth Chakravarthy
+* **Details:** The department is headed by Dr. P. Sudhakar (Contact: hod-ai-ds@rcee.ac.in or admissions@rcee.ac.in). Key faculty counselors include Assistant Professors Ms. Reshma Aman, Mr. K. Rajendhra, and Mr. T. Sangeeth Chakravarthy.
 
 ## 4. Academic Focus & Curriculum
-* **Search Tags:** **AIDS_SYLLABUS, AI_SUBJECTS, DATA_SCIENCE_CURRICULUM.**
-* **Core Subjects:**
-    * **Artificial Intelligence:** Search algorithms, Neural Networks, Fuzzy Logic.
-    * **Data Science:** Data cleaning, Visualization (Matplotlib/Seaborn), Statistical Analysis.
-    * **Machine Learning:** Supervised/Unsupervised learning, Regression, Clustering.
-    * **Deep Learning:** CNN, RNN, TensorFlow, Keras.
-    * **Big Data Analytics:** Hadoop, Spark, NoSQL Databases.
+* **Keywords:** AI&DS Syllabus, AI Subjects, Data Science Curriculum, Core Subjects, Machine Learning, Deep Learning, Big Data
+* **Core Curriculum:** The syllabus covers Artificial Intelligence (Search algorithms, Neural Networks, Fuzzy Logic), Data Science (Data cleaning, Matplotlib/Seaborn visualization, Statistical Analysis), Machine Learning (Supervised/Unsupervised, Regression, Clustering), Deep Learning (CNN, RNN, TensorFlow, Keras), and Big Data Analytics (Hadoop, Spark, NoSQL Databases).
 
 ## 5. Laboratories & Infrastructure
-* **Search Tags:** **AIDS_LABS, AI_LAB, DATA_SCIENCE_LAB, GPU_LAB.**
-* **Overview:** The department shares high-end computing resources with CSE, featuring **GPU-powered systems** for model training.
-
-### Key Laboratories
-1.  **AI & Deep Learning Lab:** High-performance workstations with GPUs for training heavy Neural Networks.
-2.  **Data Analytics Lab:** Equipped with Python (Pandas, NumPy) and R-Programming tools for statistical analysis.
-3.  **Computer Vision Lab:** Focus on Image Processing and OpenCV applications.
-4.  **Project Lab:** Dedicated space for capstone projects involving "Real-time AI solutions".
+* **Keywords:** AI&DS Labs, AI Lab, Data Science Lab, GPU Lab, Deep Learning Lab, Computer Vision Lab, Project Lab
+* **Facilities:** Sharing high-end computing resources with CSE, the department features an AI & Deep Learning Lab (high-performance workstations with GPUs for Neural Networks), a Data Analytics Lab (Python, Pandas, NumPy, R-Programming), a Computer Vision Lab (Image Processing, OpenCV), and a dedicated Project Lab for real-time AI capstone solutions.
 
 ## 6. Student Activities & Opportunities
-* **Search Tags:** **AIDS_EVENTS, AI_HACKATHONS, CODING_COMPETITIONS.**
-* **Key Activities:**
-    * **Workshops:** "Hands-on with Generative AI", "Data Visualization Bootcamps".
-    * **Hackathons:** Students actively participate in **Smart India Hackathon** and Kaggle competitions.
-    * **Certifications:** Encouraged to take courses from **Coursera, AWS (Machine Learning Specialty), and NPTEL**.
+* **Keywords:** AI&DS Events, AI Hackathons, Coding Competitions, Smart India Hackathon, Generative AI Workshops, AWS Certifications
+* **Activities:** Students actively participate in Smart India Hackathons and Kaggle competitions, attend hands-on workshops on Generative AI and Data Visualization, and pursue industry certifications via Coursera, AWS (Machine Learning Specialty), and NPTEL.
 
 ## 7. Placements (AI&DS Specific)
-* **Search Tags:** **AIDS_PLACEMENTS, DATA_SCIENTIST_JOBS, AI_SALARY, PLACEMENT_STATS_AIDS.**
-* **Placement Overview:** High demand for graduates in Data Analytics and ML Engineering roles.
-* **Placement Statistics (Recent Reviews):**
-    * **Highest Package:** **18 LPA** (Reported in recent student reviews).
-    * **Average Package:** **6.5 LPA**.
-    * **Placement Range:** Generally **6 LPA - 18 LPA** for top performers.
-* **Top Recruiters:**
-    * **Tech Giants:** **Microsoft**, **Amazon**, **IBM**, **Deloitte**.
-    * **MNCs:** TCS (Digital/Prime profiles), Infosys, Accenture, Capgemini.
-* **Job Roles:**
-    * **Data Analyst / Scientist**.
-    * **Machine Learning Engineer**.
-    * **AI Research Associate**.
-    * **Software Developer** (Python/Java).
+* **Keywords:** AI&DS Placements, Data Scientist Jobs, AI Salary, Placement Stats AI&DS, Top Recruiters, Software Developer
+* **Placement Statistics:** The department sees high demand for Data Analytics and ML Engineering roles, with top performers securing packages ranging from 6 LPA to a reported highest of 18 LPA, and an average package of 6.5 LPA.
+* **Top Recruiters & Roles:** Students are recruited by tech giants (Microsoft, Amazon, IBM, Deloitte) and MNCs (TCS Digital/Prime, Infosys, Accenture, Capgemini) for roles such as Data Analyst/Scientist, Machine Learning Engineer, AI Research Associate, and Python/Java Software Developer.

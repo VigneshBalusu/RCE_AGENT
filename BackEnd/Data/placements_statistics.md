@@ -1,73 +1,35 @@
 # Placement Statistics - Ramachandra College of Engineering (RCEE)
 
 ## 1. Overview of Placement Success
-RCEE maintains a robust placement record through its dedicated **Training & Placement Cell (T&P)**. The college focuses on consistent growth in placement volume, attracting a mix of product-based, service-based, and core companies.
-
-* **Key Focus:** Employability skills, Campus Recruitment Training (CRT), and coding proficiency.
-* **Consistency:** The college consistently aims for high placement rates for eligible registered students.
-
-> **Search Tag:** `Ramachandra College of Engineering placement report 2025`
-
----
+* **Keywords:** Placement Statistics, RCEE Placements, Placement Success, Training and Placement Cell, T&P, Employability Skills, CRT
+* **Overview:** RCEE maintains a robust placement record through its Training & Placement Cell (T&P), focusing on Employability Skills, Campus Recruitment Training (CRT), and coding proficiency to attract product-based, service-based, and core companies.
 
 ## 2. Placement Statistics by Year (Trend)
-The college has consistently achieved an approximate **75-80% placement rate** for eligible students over recent years.
+* **Keywords:** Placement Trend, Placement Rate, Total Offers, Placement Year, 2024 Placements, 2023 Placements, 2022 Placements
+* **Details:** The college consistently achieves an approximate 75-80% placement rate for eligible registered students across recent academic years.
 
 | Academic Year | Total Offers | Placement Rate |
 | :--- | :--- | :--- |
-| **2024 (Latest)** | **600+** | ~80% |
-| **2023** | 520 | ~76% |
-| **2022** | 510 | ~81% |
-
-> **Search Tag:** **Placment Statstics**
-
----
+| **2024** | 600+ | ~80% |
+| **2023** | 520+ | ~76% |
+| **2022** | 510+ | ~81% |
 
 ## 3. Salary Packages (CTC Details)
-Salary packages vary significantly based on the student's skill set, branch, and the specific role offered by the recruiter.
-
-* **Highest Package:** **₹8.0 LPA - ₹9.0 LPA** (Lakhs Per Annum)
-    * *Context:* Typically achieved by top performers in specialized roles (e.g., TCS Digital, Startups).
-* **Average Package:** **₹3.2 LPA - ₹3.8 LPA**
-    * *Context:* Represents the mean CTC across all engineering branches (Mass Recruiters).
-* **Minimum Range:** Generally ranges between **₹2.0 LPA to ₹2.4 LPA**.
-
-* **Search Tag:** **salary, package, averagepackage, highest package, highest salary, training**
-
----
+* **Keywords:** Salary Packages, CTC Details, Highest Package, Average Package, Lowest Package, Minimum Package, Salary, Placements
+* **Highest Package:** ₹8.0 LPA - ₹9.0 LPA (Typically achieved by top performers in specialized roles like TCS Digital or startup companies).
+* **Average Package:** ₹3.2 LPA - ₹3.8 LPA (Represents the mean CTC across all engineering branches and mass recruiters).
+* **Minimum Package:** Generally ranges between ₹2.0 LPA to ₹2.4 LPA.
 
 ## 4. Top Recruiters (MNCs)
-Major multi-national corporations and startups frequent the campus for recruitment drives.
+* **Keywords:** Top Recruiters, MNCs, Hiring Companies, Placement Companies, Job Offers, Recruitment Drives, IT Companies, Core Companies
+* **Tier 1 IT & Major Recruiters:** Infosys, TCS, Wipro, Cognizant (CTS), Tech Mahindra, Capgemini, Accenture, Hexaware, and HCL.
+* **Core & Startups:** Efftronics, Medha Servo Drives, Amar Raja Batteries, and Veda IIT.
 
-* **Tier 1 IT Services:** Infosys, TCS, Wipro, Cognizant (CTS), Tech Mahindra.
-* **Major Recruiters:** Capgemini, Accenture, Hexaware, HCL.
-* **Core & Startups:** Efftronics, Medha Servo Drives, Amar Raja Batteries, Veda IIT.
-* **Search Tag:** **MNC, MNC's, retcutiers, companies, top companies, top MNC, top MNC's,jobs**
-
----
-
-## 5. Department-wise Placement Breakdown
-While specific figures fluctuate annually, the general distribution trend is as follows:
-
-1.  **Computer Science (CSE/AI/DS):** Secures the highest volume of offers (**~35-40%** of total).
-2.  **Electronics (ECE):** Maintains a strong placement record (**~25-30%** of total).
-3.  **Core Branches (EEE/Mech/Civil):** Moderate volume, often securing roles in core industries or IT support.
-4.  **Management (MBA):** Specialized placements focusing on HR, Marketing, and Finance roles.
-5. **Search Tag:** **RCEE Eluru branch wise placement analysis**
-
----
+## 5. Department-wise Placement Breakdown (Recent Data)
+* **Keywords:** Branch Wise Placements, Department Placements, CSE Placements, ECE Placements, Core Placements, MBA Placements, Placement Analysis
+* **Volume Distribution (600+ Offers):** Computer Science cluster secures the highest volume (CSE: 120, AI&DS: 44, Cyber Security: 41, IoT: 47). Electronics (ECE) maintains a strong record with 117 offers. 
+* **Core & Management:** Core branches secure solid roles in core industries or IT support (EEE: 78, Mechanical: 37, Civil: 33). Management (MBA) secured 64 offers focusing on specialized HR, Marketing, and Finance roles.
 
 ## 6. Placement Support & Training (CRT)
-To ensure students are industry-ready, the college provides comprehensive **Campus Recruitment Training (CRT)**:
-
-* **Technical Training:** Coding bootcamps (Python/Java) and Data Structures & Algorithms (DSA).
-* **Aptitude:** Training in quantitative aptitude and logical reasoning.
-* **Soft Skills:** Mock interviews, Group Discussions (GD), and resume building workshops.
-* **Internships:** Active industry interaction programs to provide real-world exposure.
-
-* **Search Tag:** **Ramachandra College of Engineering CRT training modules**
-
----
-
-## Important Disclaimer
-Placement numbers often represent cumulative offers rather than unique students placed. Statistics are subject to market conditions and economic factors. For the absolute latest list of companies visiting this month, students should check the official T&P notice board.
+* **Keywords:** Placement Support, CRT, Campus Recruitment Training, Technical Training, Aptitude, Soft Skills, Internships, Training Modules
+* **Training Modules:** Comprehensive training includes technical coding bootcamps (Python/Java, Data Structures & Algorithms), quantitative aptitude and logical reasoning, soft skills (mock interviews, Group Discussions, resume building), and internships for real-world exposure.

@@ -1,80 +1,34 @@
-# Department of Electrical & Electronics Engineering (EEE) - Overview
+# Department of Electrical & Electronics Engineering (EEE) - Ramachandra College of Engineering (RCEE)
 
-## Scope of Document
-This document details the profile, academic programs, infrastructure, and leadership of the EEE Department at Ramachandra College of Engineering (RCEE).
-**Use this data for:** "Who is EEE HOD?", "EEE Intake seats", "EEE Department Vision", "EEE Labs list", "EEE Student Association", "EEE Placements".
+## Overview of EEE Department
+* **Keywords:** Electrical and Electronics Engineering, EEE Profile, EEE Establishment, EEE Seats, EEE Intake, Power Engineering
 
 ## 1. Department Profile & Stats
-* **Department Name:** **Electrical and Electronics Engineering (EEE)**
-* **Established:** **2008**
-* **Search Tags:** **EEE_PROFILE, EEE_ESTABLISHMENT, EEE_SEATS, EEE_INTAKE, POWER_ENGINEERING.**
-* **Intake Capacity:**
-    * **B.Tech (UG):** **120 Seats** (Enhanced from 60 in 2008 -> 120 in 2010).
-    * **M.Tech (PG):** **18 Seats** (Specialization: **Power Electronics**).
-* **Key Strengths:** Strong focus on **Renewable Energy**, **Electric Vehicles (EV)**, and **IoT applications in Power Systems**.
+* **Keywords:** EEE Department, Established 2008, BTech EEE Seats, MTech Power Electronics Seats, Renewable Energy, Electric Vehicles, IoT Power Systems
+* **Overview:** Established in 2008, the Electrical and Electronics Engineering (EEE) department has a B.Tech (UG) intake capacity of 120 seats and an M.Tech (PG) intake of 18 seats specializing in Power Electronics. The department maintains a strong focus on Renewable Energy, Electric Vehicles (EV), and IoT applications in Power Systems.
 
-## 2. Vision & Mission (EEE)
-* **Search Tags:** **EEE_VISION, EEE_MISSION, EEE_GOALS.**
+## 2. Vision & Mission
+* **Keywords:** EEE Vision, EEE Mission, EEE Goals, Value Based Technical Education, Technocrats, Professional Learning, Engineering Ethics
+* **Vision:** To impart and empower the rural youth with excellent value-based technical education and leadership qualities, focusing on higher education and transforming them into successful professionals with research and entrepreneurial skills.
+* **Mission:** To yield qualified technocrats through state-of-the-art infrastructure, acquire and sustain a professional learning process by collaborating with core sectors and R&D laboratories, and awake young minds with human values and professional ethics to face the challenging global environment.
 
-### Vision
-"To impart and empower the rural youth with excellent **value based technical education**, leadership qualities with a focus on higher education and transform them as successful professionals with research and entrepreneurial skills."
-
-### Mission
-1.  **Technocrats:** To yield qualified technocrats through state-of-the-art infrastructure in Electrical and Electronics Engineering.
-2.  **Professional Learning:** To acquire, incubate and sustain the professional learning process by collaborating with **core sectors and R&D laboratories**.
-3.  **Ethics:** To awake young minds with human values and professional ethics to face the challenging global environment.
-
-## 3. Leadership (Head of Department)
-* **Role:** **Head of Department (HoD) - EEE**
-* **Name:** **Dr. S. Subramanya Sarma** (M.Tech, Ph.D)
-* **Search Tags:** **EEE_HOD, HOD_EEE, SUBRAMANYA_SARMA, CONTACT_EEE_HOD.**
-* **Contact Email:** hod-eee@rcee.ac.in
-* **Phone:** **+91 99499 95754**
-* **Profile Highlights:**
-    * **Research Interests:** Distributed Generation, Renewable Energy, Smart Grids, and **AI/IoT applications in Engineering**.
-    * **Publications:** Published **32+ research articles** in national/international journals.
+## 3. Leadership & Faculty
+* **Keywords:** EEE HOD, Head of EEE, Dr S Subramanya Sarma, Contact EEE HOD, Distributed Generation, Smart Grids, AI in Engineering
+* **Details:** The department is headed by Dr. S. Subramanya Sarma (Contact: hod-eee@rcee.ac.in or +91 99499 95754), who also serves as the Dean of Academics. He has published 32+ research articles and holds research interests in Distributed Generation, Renewable Energy, Smart Grids, and AI/IoT applications in Engineering.
 
 ## 4. Academic Programs Offered
-* **Search Tags:** **EEE_COURSES, EEE_DEGREE, BTECH_EEE, MTECH_POWER_ELECTRONICS.**
-
-### Undergraduate (B.Tech)
-* **Course:** **B.Tech in Electrical & Electronics Engineering**
-* **Duration:** 4 Years
-* **Focus:** Power Systems, Electrical Machines, Control Systems, and Power Electronics.
-
-### Postgraduate (M.Tech)
-* **Course:** **M.Tech in Power Electronics**
-* **Duration:** 2 Years
-* **Focus:** Advanced Drives, Industrial Automation, and Renewable Energy Integration.
+* **Keywords:** EEE Courses, EEE Degree, BTech EEE, MTech Power Electronics, Power Systems, Industrial Automation
+* **Programs Offered:** The department offers a 4-year B.Tech in EEE focusing on Power Systems, Electrical Machines, Control Systems, and Power Electronics, alongside a 2-year M.Tech in Power Electronics focusing on Advanced Drives, Industrial Automation, and Renewable Energy Integration.
 
 ## 5. Laboratories & Infrastructure
-* **Search Tags:** **EEE_LABS, POWER_ELECTRONICS_LAB, MACHINES_LAB, EEE_INFRASTRUCTURE.**
-* **Overview:** The department maintains specialized labs with licensed software like **MATLAB** and **PSPICE**.
-
-### Key Laboratories
-1.  **Electrical Machines Lab (I & II):** For testing DC/AC motors and transformers.
-2.  **Power Electronics Lab:** Equipped with advanced drive modules and converters.
-3.  **Control Systems Lab:** Focuses on stability analysis and controller design.
-4.  **Circuits & Measurements Lab:** Calibration of energy meters and circuit analysis.
-5.  **R&D Lab:** Dedicated research space with 4 high-end systems for faculty/student projects.
-6.  **Project Lab:** Equipped with **65 systems** for final year projects and simulations.
+* **Keywords:** EEE Labs, Power Electronics Lab, Machines Lab, EEE Infrastructure, Control Systems Lab, Circuits and Measurements Lab
+* **Facilities:** The department maintains specialized labs equipped with licensed software like MATLAB and PSPICE. Key facilities include the Electrical Machines Lab (I & II) for testing DC/AC motors and transformers, Power Electronics Lab (advanced drive modules and converters), Control Systems Lab (stability analysis), Circuits & Measurements Lab, a dedicated R&D Lab with high-end systems, and a Project Lab equipped with 65 systems for final year simulations.
 
 ## 6. Student Clubs & Activities
-* **Search Tags:** **EEE_CLUBS, VID_YOUTH, EEE_ASSOCIATION, EEE_EVENTS.**
-* **Association:** **"VID-YOUTH"** (formerly E-STAR).
-    * **Role:** The official technical association organized by 3rd-year students to conduct quizzes, seminars, and industrial visits.
-* **Key Events:**
-    * **Workshops:** "PCB Design for Smart Systems", "IoT Driven Solutions", "Design Thinking & Innovation".
-    * **Industrial Visits:** Visits to **Satish Dhawan Space Centre (SDSC) SHAR**, Sriharikota.
-    * **Guest Lectures:** Topics like "AI in Power Sector" and "Python for Machine Learning".
+* **Keywords:** EEE Clubs, VID YOUTH, EEE Association, EEE Events, PCB Design, Industrial Visits, Satish Dhawan Space Centre
+* **Associations & Events:** The official technical association, "VID-YOUTH" (formerly E-STAR), is organized by 3rd-year students to conduct technical quizzes, seminars, and industrial visits (such as to the Satish Dhawan Space Centre, SHAR). The department regularly hosts guest lectures and workshops on topics like "PCB Design for Smart Systems," "IoT Driven Solutions," and "AI in Power Sector."
 
 ## 7. Placements (EEE Specific)
-* **Search Tags:** **EEE_PLACEMENTS, EEE_JOBS, CORE_COMPANIES_EEE, EEE_SALARY.**
-* **Placement Overview:** EEE students secure roles in both Core Electrical firms and IT companies.
-* **Top Recruiters:**
-    * **Core/Industry:** **Voltech**, **Petrofac**, **Efftronics**, **Amar Raja Batteries**.
-    * **IT/Software:** **TCS**, **Capgemini**, **Tech Mahindra**, **Wipro**.
-* **Placement Statistics:**
-    * **Highest Package:** **8 LPA - 9 LPA**.
-    * **Median Salary:** **3.2 LPA**.
-    * **Placement Percentage:** ~75% - 80%.
+* **Keywords:** EEE Placements, EEE Jobs, Core Companies EEE, EEE Salary, Top Recruiters, Voltech, Efftronics
+* **Placement Statistics:** EEE students secure roles in both core electrical firms and IT companies, achieving a placement percentage of ~75% to 80%. The median salary is 3.2 LPA, with highest packages ranging from 8 LPA to 9 LPA.
+* **Top Recruiters:** Core industry hiring partners include Voltech, Petrofac, Efftronics, and Amar Raja Batteries. IT and Software recruiters include TCS, Capgemini, Tech Mahindra, and Wipro.

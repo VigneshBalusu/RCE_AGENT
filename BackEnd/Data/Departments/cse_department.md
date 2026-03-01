@@ -1,84 +1,25 @@
-# Department of Computer Science & Engineering (CSE) - Overview
+# Department of Computer Science & Engineering (CSE) - Ramachandra College of Engineering (RCEE)
 
-## Scope of Document
-This document details the profile, academic programs, infrastructure, and leadership of the CSE Department at Ramachandra College of Engineering (RCEE).
-**Use this data for:** "Who is CSE HOD?", "CSE Intake seats", "CSE Department Vision", "CSE Labs list", "Is CSE NBA accredited?", "CSE Placements".
+## Overview of CSE Department
+* **Keywords:** Computer Science, CSE Profile, Department Establishment, CSE Seats, Intake Capacity, NBA Accredited, Centre of Excellence
 
 ## 1. Department Profile & Stats
-* **Department Name:** **Computer Science and Engineering (CSE)**
-* **Established:** **2008**
-* **Search Tags:** **CSE_PROFILE, DEPT_ESTABLISHMENT, CSE_SEATS, CSE_INTAKE, NBA_STATUS.**
-* **Accreditation:** **NBA Accredited** (Since 2018).
-* **Intake Capacity:**
-    * **B.Tech (UG):** **180 Seats** (Enhanced from 60 in 2008 -> 120 in 2012 -> 180 in 2019).
-    * **M.Tech (PG):** **18 Seats**.
-* **Key Strengths:** High pass percentage, strong placement record, and "Centre of Excellence" in emerging technologies.
+* **Keywords:** CSE Department, Established 2008, BTech CSE Seats, MTech CSE Seats, NBA Status, Top Engineering Branch
+* **Overview:** Established in 2008 and NBA Accredited since 2018, the CSE department has a B.Tech (UG) intake capacity of 180 seats (incremented from the initial 60) and an M.Tech (PG) intake of 18 seats. It is recognized as a Centre of Excellence with a strong placement record and a high pass percentage.
 
-## 2. Vision & Mission (CSE)
-* **Search Tags:** **CSE_VISION, CSE_MISSION, DEPT_GOALS, CSE_OBJECTIVES.**
+## 2. Vision & Mission
+* **Keywords:** CSE Vision, CSE Mission, Department Goals, CSE Objectives, Innovation Education, Holistic Development, Cutting Edge Technology
+* **Vision:** To promote innovation-centric education in the field of Computer Science with knowledge of cutting-edge technology and competence as professionals having human values and leadership qualities.
+* **Mission:** To provide a high-quality learning ambience, equip students with state-of-the-art skills for real-world challenges, enhance holistic development (innovativeness, multidisciplinary skills, leadership, work ethics), and collaborate with industry and academia for exposure to modern tools.
 
-### Vision
-"To promote **Innovation centric education** in the field of Computer Science with Knowledge on **Cutting edge Technology** with competence as professionals having human values and leadership qualities."
-
-### Mission
-1.  **Quality Ambience:** To provide high-quality learning ambience with well-qualified and motivated faculty.
-2.  **Skills:** Equip students with state-of-the-art knowledge and skills to take up real-world challenges.
-3.  **Holistic Development:** To enhance innovativeness, multidisciplinary skills, leadership qualities, work ethics, and societal responsibilities.
-4.  **Collaboration:** To provide exposure to cutting-edge tools by entering into collaborations with industry and academia.
-
-## 3. Leadership (Head of Department)
-* **Role:** **Head of Department (HoD) - CSE**
-* **Name:** **Dr. G. Chamundeswari** (M.Tech, Ph.D)
-* **Search Tags:** **CSE_HOD, HOD_NAME, CHAMUNDESWARI, CSE_HEAD, CONTACT_HOD, DEPT_HEAD_CSE.**
-* **Contact Email:** hod-cse@rcee.ac.in
-* **Phone:** **+91 94403 26328**
-* **Profile Highlights:**
-    * **Experience:** 24+ Years in Teaching & Administration.
-    * **Research:** Expert in **AI, Machine Learning, and Image Processing**.
-    * **Achievements:** Certified NPTEL Achiever, recipient of **MSME Idea Hackathon** grants, and TIH-IoT Fellowship.
+## 3. Leadership & Faculty
+* **Keywords:** CSE HOD, Head of CSE, Dr G Chamundeswari, Contact CSE HOD, Department Head, AI Expert
+* **Details:** The department is headed by Dr. G. Chamundeswari (Contact: hod-cse@rcee.ac.in or +91 94403 26328). With 24+ years of experience in teaching and administration, she is an expert in AI, Machine Learning, and Image Processing, a certified NPTEL Achiever, and a recipient of MSME Idea Hackathon grants and the TIH-IoT Fellowship.
 
 ## 4. Academic Programs Offered
-* **Search Tags:** **CSE_COURSES, CSE_PROGRAMS, CSE_DEGREE, BTECH_CSE, MTECH_CSE.**
-
-### Undergraduate (B.Tech)
-* **Course:** **B.Tech in Computer Science & Engineering**
-* **Duration:** 4 Years
-* **Focus:** Software Engineering, Algorithms, Data Structures, Web Development, and Core Computing.
-
-### Postgraduate (M.Tech)
-* **Course:** **M.Tech in Computer Science & Engineering**
-* **Duration:** 2 Years
-* **Focus:** Advanced Algorithms, Research Methodologies, and Specialized Computing.
+* **Keywords:** CSE Courses, CSE Programs, CSE Degree, BTech CSE, MTech CSE, Software Engineering
+* **Programs Offered:** The department offers a 4-year B.Tech in CSE focusing on Software Engineering, Algorithms, Data Structures, Web Development, and Core Computing, alongside a 2-year M.Tech in CSE focusing on Advanced Algorithms, Research Methodologies, and Specialized Computing.
 
 ## 5. Laboratories & Infrastructure
-* **Search Tags:** **CSE_LABS, COMPUTER_LABS, LAB_INFRASTRUCTURE, IOT_LAB, RESEARCH_LAB, LAB_FACILITIES.**
-* **Overview:** The department has **6+ fully furnished laboratories** with high-end configurations.
-
-### Key Laboratories
-1.  **AI & ML Lab:** High-performance GPU systems for Deep Learning and AI research.
-2.  **IoT Lab (Internet of Things):** Equipped with sensors, Raspberry Pi, and Arduino kits.
-3.  **Cyber Security / CNS Lab:** Dedicated space for network security and cryptography.
-4.  **Data Structures & Algorithms Lab:** For C, C++, and Python programming practice.
-5.  **Web Technologies / DBMS Lab:** Focus on Full Stack Development and SQL/Oracle database management.
-6.  **Project Lab:** Dedicated space for final year R&D and startup incubation.
-
-**Software Available:** Oracle, Python, Rational Rose, MATLAB, Apache Tomcat, Selenium.
-
-## 6. Student Clubs & Department Highlights
-* **Search Tags:** **CSE_CLUBS, ACTIVE_ASSOCIATION, TECHNICAL_CLUBS, HACKATHONS, SPARKLE_MAGAZINE.**
-* **ACTIVE Association:** The primary student association of CSE. Conducts workshops, "Technical Quizzes", and publishes the technical magazine **"SPARKLE"**.
-* **Professional Chapters:**
-    * **CSI Student Chapter:** Computer Society of India active chapter.
-    * **ISTE Chapter:** Indian Society for Technical Education activities.
-* **Key Events:** "Shastra Coding Challenge", "Project Expo" (Innovation fair), and Guest Lectures by Industry Experts.
-
-## 7. Placements (CSE Specific)
-* **Search Tags:** **CSE_PLACEMENTS, CSE_JOBS, TOP_RECRUITERS, HIGHEST_PACKAGE, CSE_SALARY.**
-* **Track Record:** CSE consistently records the highest number of placements in the college.
-* **Placement Statistics:**
-    * **Highest Package:** **8 LPA - 9 LPA** (Regularly), with exceptional offers up to **24 LPA** reported.
-    * **Average Package:** **3.5 LPA - 4.5 LPA**.
-    * **Placement Percentage:** ~70-85% of eligible students placed.
-* **Top Recruiters:**
-    * **MNCs:** TCS, Infosys, Wipro, Cognizant, Capgemini, Accenture.
-    * **Product/Specialized:** Microsoft (limited), Juspay, Zoho, Tech Mahindra.
+* **Keywords:** CSE Labs, Computer Labs, Lab Infrastructure, IoT Lab, Research Lab, Cyber Security Lab, AI Lab, Web Tech Lab
+* **Facilities:** The department features 6+ fully furnished, high-end laboratories,

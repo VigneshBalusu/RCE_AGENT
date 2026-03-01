@@ -1,8 +1,7 @@
 # Eligibility Criteria - Ramachandra College of Engineering (RCEE)
 
 ## Overview of Eligibility
-* **SearchTags:** **ELIGIBILITY_OVERVIEW, ADMISSION_REQUIREMENTS, RCEE_CRITERIA, QUALIFICATION_NORMS, ENTRANCE_EXAMS_REQUIRED.**
-* **Content:** This document outlines the academic and entrance exam requirements for admission into Undergraduate (B.Tech) and Postgraduate (MBA, M.Tech) programs at Ramachandra College of Engineering, Eluru.
+* **Keywords:** Eligibility Overview, Admission Requirements, RCEE Criteria, Qualification Norms, Entrance Exams Required
 
 ---
 
@@ -106,6 +105,9 @@
 | | Male | 23,879 |
 | **BC-E** | Female | 12,001 |
 | **SC** | Male | 25,405 |
+
+### M.Tech (GATE / AP PGECET 2025)
+* **Note:** Specific M.Tech cutoff ranks are not publicly disclosed by the institution. Admissions are merit-based: **GATE score holders** are given first priority, followed by **AP PGECET rank holders** for any remaining vacant seats. Candidates are advised to contact the admissions office directly for seat availability.
 
 ---
 

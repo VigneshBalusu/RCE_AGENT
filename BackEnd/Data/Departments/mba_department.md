@@ -1,63 +1,30 @@
-# Department of Management Studies (MBA) - Overview
+# Department of Management Studies (MBA) - Ramachandra College of Engineering (RCEE)
 
-## Scope of Document
-This document details the profile, academic focus, and placement records of the MBA Department at Ramachandra College of Engineering (RCEE).
-**Use this data for:** "MBA Specializations", "MBA Intake seats", "MBA HOD Name", "MBA Fees", "MBA Placements", "MBA Recruiters".
+## Overview of MBA Department
+* **Keywords:** MBA Profile, MBA Seats, MBA Intake, Management Dept, PG Course, Department of Management Studies
 
 ## 1. Department Profile & Stats
-* **Department Name:** **Department of Management Studies (MBA)**
-* **Established:** **2009** (Started with 60 seats).
-* **Search Tags:** **MBA_PROFILE, MBA_SEATS, MBA_INTAKE, MANAGEMENT_DEPT, PG_COURSE.**
-* **Intake Capacity:**
-    * **MBA (PG):** **120 - 180 Seats** (Enhanced to 180 in 2014, currently operating with ~120 intake based on latest admissions data).
-* **Course Duration:** 2 Years (4 Semesters).
-* **Affiliation:** JNTU Kakinada (Autonomous).
+* **Keywords:** MBA Department, Established 2009, MBA Intake Capacity, Course Duration, Autonomous JNTUK
+* **Overview:** Established in 2009, the Department of Management Studies (MBA) operates as a 2-year (4 Semesters) postgraduate course affiliated with JNTU Kakinada (Autonomous), with an intake capacity ranging between 120 and 180 seats.
 
-## 2. Vision & Mission (MBA)
-* **Search Tags:** **MBA_VISION, MBA_MISSION, MANAGEMENT_GOALS.**
+## 2. Vision & Mission
+* **Keywords:** MBA Vision, MBA Mission, Management Goals, Ethical Managers, Skill Development, Entrepreneurship, Holistic Growth
+* **Vision:** To be a premier centre for management education and research, producing globally competent, socially responsible, and ethical managers.
+* **Mission:** To impart quality management education through case studies, industrial visits, and internships; foster an entrepreneurial spirit to create job creators; and focus on holistic growth through personality development, communication skills, and leadership qualities.
 
-### Vision
-"To be a premier centre for management education and research, producing **globally competent, socially responsible, and ethical managers**."
-
-### Mission
-1.  **Skill Development:** To impart quality management education through case studies, industrial visits, and internships.
-2.  **Entrepreneurship:** To foster an entrepreneurial spirit among students to become job creators rather than job seekers.
-3.  **Holistic Growth:** To focus on personality development, communication skills, and leadership qualities.
-
-## 3. Leadership (Head of Department)
-* **Role:** **Head of Department (HoD) - MBA**
-* **Name:** **Dr. Suravarapu Naga Padma** (MBA, Ph.D).
-* **Search Tags:** **MBA_HOD, HOD_MANAGEMENT, PADMA_LATHA, CONTACT_MBA.**
-* **Contact Email:** hod-mba@rcee.ac.in
-* **Phone:** **+91 94924 92783**.
-* **Profile Highlights:**
-    * **Experience:** 15+ Years in Teaching & Industry.
-    * **Qualifications:** MBA (Finance & Marketing), M.H.R.M, Ph.D from Andhra University.
-    * **Research:** Published patents and authored textbooks on "International Financial Management".
+## 3. Leadership & Faculty
+* **Keywords:** MBA HOD, Head of Management, Dr Suravarapu Naga Padma, Padma Latha, Contact MBA, Finance and Marketing
+* **Details:** The department is headed by Dr. Suravarapu Naga Padma (Contact: hod-mba@rcee.ac.in or +91 94924 92783). With 15+ years of teaching and industry experience, she holds an MBA (Finance & Marketing), M.H.R.M, and a Ph.D. from Andhra University, and has published patents and authored textbooks on International Financial Management.
 
 ## 4. Academic Programs & Specializations
-* **Search Tags:** **MBA_SPECIALIZATION, MBA_SUBJECTS, MARKETING, FINANCE, HR_MANAGEMENT.**
-* **Core Specializations Offered:**
-    * **Finance:** Security Analysis, Portfolio Management, Banking & Insurance.
-    * **Marketing:** Consumer Behavior, Digital Marketing, Retail Management.
-    * **Human Resource Management (HR):** Performance Management, Industrial Relations, Talent Acquisition.
-    * **Systems:** Management Information Systems (MIS), E-Commerce, Data Analytics.
+* **Keywords:** MBA Specialization, MBA Subjects, Marketing, Finance, HR Management, Systems, MIS, Data Analytics
+* **Core Specializations:** The program offers specialized focus areas including Finance (Security Analysis, Portfolio Management, Banking & Insurance), Marketing (Consumer Behavior, Digital Marketing, Retail Management), Human Resource Management (Performance Management, Industrial Relations, Talent Acquisition), and Systems (Management Information Systems, E-Commerce, Data Analytics).
 
 ## 5. Student Activities & Development
-* **Search Tags:** **MBA_EVENTS, MANAGEMENT_MEET, INDUSTRIAL_VISITS.**
-* **Industrial Visits:** Regular visits to companies like **Coco-Cola**, **Sangam Dairy**, and **Vizag Steel Plant**.
-* **Management Meets:** Organizing "B-Quiz", "Young Manager" contests, and "MarketKshetra" (Marketing expo).
-* **Training:** Special focus on "Soft Skills", "Aptitude", and "Resume Building" from 1st Semester.
+* **Keywords:** MBA Events, Management Meet, Industrial Visits, Soft Skills, B-Quiz, MarketKshetra
+* **Activities & Training:** Students receive special training in Soft Skills, Aptitude, and Resume Building from the 1st Semester. The department organizes industrial visits to companies like Coca-Cola, Sangam Dairy, and Vizag Steel Plant, alongside management meets featuring B-Quiz, Young Manager contests, and the MarketKshetra marketing expo.
 
 ## 6. Placements (MBA Specific)
-* **Search Tags:** **MBA_PLACEMENTS, MBA_SALARY, MANAGEMENT_JOBS, MBA_RECRUITERS.**
-* **Placement Overview:** MBA graduates secured placements in **FinTech, Marketing, and HR** domains.
-* **Placement Statistics (2023-24):**
-    * **Highest Package:** **4.6 LPA** (Accenture/Core roles).
-    * **Average Package:** **3.0 LPA - 3.5 LPA**.
-    * **Placement Percentage:** ~70% of registered students.
-* **Top Recruiters (Recent Batches):**
-    * **Marketing/Sales:** **Zomato** (4 LPA), **Savidha Digitals**, **Naga Hanuman Group**.
-    * **Finance/Data:** **FactSet** (3.4 LPA), **Spandana Sphoorty Financial Ltd**.
-    * **HR/Operations:** **Kapston Services** (2 LPA), **Vijai Electricals** (3.6 LPA).
-    * **MNCs:** **Accenture**, **Genpact**.
+* **Keywords:** MBA Placements, MBA Salary, Management Jobs, MBA Recruiters, FinTech, Marketing Jobs, HR Roles
+* **Placement Statistics:** Placing approximately 70% of registered students in FinTech, Marketing, and HR domains, recent batches achieved an average package of 3.0 LPA to 3.5 LPA, with the highest package reaching 4.6 LPA for core roles at Accenture.
+* **Top Recruiters & Packages:** Key hiring partners include Marketing/Sales firms (Zomato at 4 LPA, Savidha Digitals, Naga Hanuman Group), Finance/Data firms (FactSet at 3.4 LPA, Spandana Sphoorty Financial Ltd), HR/Operations companies (Kapston Services at 2 LPA, Vijai Electricals at 3.6 LPA), and MNCs like Accenture and Genpact.

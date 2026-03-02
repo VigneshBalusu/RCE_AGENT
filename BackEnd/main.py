@@ -51,11 +51,12 @@ def get_retriever():
         print(f"❌ [STARTUP] Critical Import Error: {e}", flush=True)
         return None
 
-    # Custom BM25 preprocessor: strips markdown punctuation so
-    # 'Principal,' and '**Keywords:**' correctly match plain query terms.
+    # Custom BM25 preprocessor: strips markdown punctuation AND underscores so
+    # 'Principal,' → 'principal' and 'CUTOFF_RANKS' → 'cutoff ranks' match plain query terms.
     def markdown_preprocess(text: str):
         text = text.lower()
-        text = re.sub(r'[^\w\s]', ' ', text)  # replace all punctuation with space
+        text = re.sub(r'[^a-z0-9 ]', ' ', text)  # remove all non-alphanumeric (incl. underscores)
+        text = re.sub(r' +', ' ', text)           # collapse multiple spaces
         return text.split()
 
     # 1. Setup Embeddings

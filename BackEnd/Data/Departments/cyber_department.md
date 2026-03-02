@@ -27,4 +27,4 @@
 ## 6. Placements & Career Scope
 * **Keywords:** Cyber Jobs, Cyber Placements, CS Salary, Security Roles, Security Analyst, Penetration Tester, Network Security Engineer
 * **Placement Statistics:** As a niche branch, students are eligible for mainstream CSE software jobs plus specialized security roles. Recent batches have seen an average package of 3.5 LPA and a highest package of 7.0 LPA.
-* **Top Recruiters & Roles:** Key recruiters include security and cloud divisions of AWS, IBM, and Wipro, as well as general tech giants like TCS, Infosys, Accenture, and HCL. Students are hired for roles such as Security Analyst (SOC Analyst), Penetration Tester (Ethical Hacker), Network Security Engineer, and Cyber Forensic Investigator.
+* **Top Recruiters & Roles:** Key recruiters include security and cloud divisions of TCS, Accenture and Wipro, as well as general tech giants like TCS, Infosys, Accenture, and HCL. Students are hired for roles such as Security Analyst (SOC Analyst), Network Security Engineer.

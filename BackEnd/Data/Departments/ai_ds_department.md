@@ -30,5 +30,5 @@
 
 ## 7. Placements (AI&DS Specific)
 * **Keywords:** AI&DS Placements, Data Scientist Jobs, AI Salary, Placement Stats AI&DS, Top Recruiters, Software Developer
-* **Placement Statistics:** The department sees high demand for Data Analytics and ML Engineering roles, with top performers securing packages ranging from 6 LPA to a reported highest of 18 LPA, and an average package of 6.5 LPA.
-* **Top Recruiters & Roles:** Students are recruited by tech giants (Microsoft, Amazon, IBM, Deloitte) and MNCs (TCS Digital/Prime, Infosys, Accenture, Capgemini) for roles such as Data Analyst/Scientist, Machine Learning Engineer, AI Research Associate, and Python/Java Software Developer.
+* **Placement Statistics:** The department actively places students in Data Analytics and software roles, securing 44 offers in the recent 600+ college-wide placement drive. The college's median salary package is approximately 4 LPA, with the highest packages for top performers reaching up to 7 LPA. 
+* **Top Recruiters & Roles:** Students are recruited by MNCs and IT companies such as TCS, Wipro, Accenture. Typical roles include Data Analyst, Software Developer, and entry-level Machine Learning Engineers.

@@ -30,5 +30,5 @@
 
 ## 7. Placements (AI&ML Specific)
 * **Keywords:** AI&ML Placements, ML Jobs, AI Engineer Salary, Top Recruiters, NLP Scientist, Computer Vision Engineer
-* **Placement Statistics:** Graduates target specialized AI roles with average packages between 3.5 LPA and 4.5 LPA, and highest packages reaching 8 LPA to 9 LPA from product companies.
-* **Top Recruiters & Roles:** Key recruiters include AI/Data firms (BlackBuck, Efftronics, NielsenIQ) and MNCs (TCS Digital, Cognizant, Accenture) hiring for specialized roles such as Machine Learning Engineer, AI Developer, NLP Scientist, and Computer Vision Engineer.
+* **Placement Statistics:** Graduates target specialized AI roles with average packages between 3.5 LPA and 4.5 LPA, and highest packages reaching 7 LPA from product companies.
+* **Top Recruiters & Roles:** Key recruiters include AI/Data firms  and MNCs (TCS Digital, Cognizant, Accenture) hiring for specialized roles such as Machine Learning Engineer, AI Developer, NLP Scientist, and Computer Vision Engineer.

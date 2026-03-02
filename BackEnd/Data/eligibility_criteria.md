@@ -54,6 +54,7 @@
 
 ## 5. Previous Year Cutoff Ranks (2025-26)
 * **SearchTags:** **CUTOFF_RANKS, PREVIOUS_YEAR_DATA, LAST_RANKS, 2025_CUTOFFS.**
+* **Keywords:** branch branches cutoff cutoffs rank ranks, EAPCET rank branch wise, OC BC SC ST cutoff closing rank, which branch can I get, branch availability seats, last rank closing rank admitted 2025
 * **Note:** The data below represents the **Last Rank (Closing Rank)** admitted in the 2025-26 academic year. Students with ranks *better (lower)* than these are typically eligible.
 
 ### B.Tech (AP EAPCET 2025)

@@ -22,4 +22,9 @@
 
 ## 5. Laboratories & Infrastructure
 * **Keywords:** CSE Labs, Computer Labs, Lab Infrastructure, IoT Lab, Research Lab, Cyber Security Lab, AI Lab, Web Tech Lab
-* **Facilities:** The department features 6+ fully furnished, high-end laboratories,
+* **Facilities:** The department features 6+ fully furnished, high-end laboratories, including advanced Computer Programming Labs, a Web Technologies Lab, a Cyber Security Lab, and an AI/IoT Research Lab equipped with the latest hardware and software to support specialized computing and student capstone projects.
+
+## 6. Placements (CSE Specific)
+* **Keywords:** CSE Placements, CSE Highest Package, CSE Average Package, Top Recruiters, Software Engineer Jobs, IT Placements
+* **Placement Statistics:** The CSE department maintains a robust placement record. Graduates secure average packages ranging from 3.5 LPA to 6.5 LPA. The highest packages for top performers in the CSE department typically range between 6 LPA
+* **Top Recruiters & Roles:** Major recruiters include tech giants and MNCs such as TCS, Infosys, Wipro, Accenture, Cognizant. Students are frequently placed in roles like Software Developer, Systems Engineer, Data Analyst, and IT Consultant.

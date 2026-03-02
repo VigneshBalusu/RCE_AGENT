@@ -30,5 +30,5 @@
 
 ## 7. Placements (EEE Specific)
 * **Keywords:** EEE Placements, EEE Jobs, Core Companies EEE, EEE Salary, Top Recruiters, Voltech, Efftronics
-* **Placement Statistics:** EEE students secure roles in both core electrical firms and IT companies, achieving a placement percentage of ~75% to 80%. The median salary is 3.2 LPA, with highest packages ranging from 8 LPA to 9 LPA.
+* **Placement Statistics:** EEE students secure roles in both core electrical firms and IT companies, achieving a placement percentage of ~75% to 80%. The median salary is b/w 3.5 - 4 LPA, with highest packages reaching upto 5 LPA
 * **Top Recruiters:** Core industry hiring partners include Voltech, Petrofac, Efftronics, and Amar Raja Batteries. IT and Software recruiters include TCS, Capgemini, Tech Mahindra, and Wipro.

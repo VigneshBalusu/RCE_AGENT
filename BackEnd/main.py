@@ -11,9 +11,11 @@ from pydantic import BaseModel
 from langchain_classic.retrievers import EnsembleRetriever
 
 # --- 1. CONFIGURATION ---
-OPENAI_EMBEDDING_MODEL = "text-embedding-ada-002"  # 1536-dim, matches existing ChromaDB
+# Updated to match the model you used in your training notebook
+OPENAI_EMBEDDING_MODEL = "text-embedding-3-small"  
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 CHROMA_PATH = os.path.join(BASE_DIR, "chroma_db")
+BM25_PATH = os.path.join(BASE_DIR, "bm25_index.pkl")
 
 # --- 2. CLOUD COMPATIBILITY (Safety Check for Render/Streamlit) ---
 try:
@@ -36,28 +38,16 @@ def get_retriever():
     
     # Lazy imports to prevent startup crashes if libs are missing
     try:
-        import glob
-        import re
         import time
+        import pickle
         from langchain_openai import OpenAIEmbeddings
         from langchain_community.vectorstores import Chroma
-        from langchain_community.retrievers import BM25Retriever
-        from langchain_community.document_loaders import TextLoader
-        from langchain_classic.text_splitter import RecursiveCharacterTextSplitter
-        from langchain_core.documents import Document
+        from langchain_classic.retrievers import EnsembleRetriever
         print("✅ [STARTUP] All imports successful.", flush=True)
 
     except ImportError as e:
         print(f"❌ [STARTUP] Critical Import Error: {e}", flush=True)
         return None
-
-    # Custom BM25 preprocessor: strips markdown punctuation AND underscores so
-    # 'Principal,' → 'principal' and 'CUTOFF_RANKS' → 'cutoff ranks' match plain query terms.
-    def markdown_preprocess(text: str):
-        text = text.lower()
-        text = re.sub(r'[^a-z0-9 ]', ' ', text)  # remove all non-alphanumeric (incl. underscores)
-        text = re.sub(r' +', ' ', text)           # collapse multiple spaces
-        return text.split()
 
     # 1. Setup Embeddings
     print(f"🔑 [STARTUP] Checking OPENAI_API_KEY from .env...", flush=True)
@@ -66,66 +56,47 @@ def get_retriever():
         print("❌ [STARTUP] OPENAI_API_KEY not found in .env file!", flush=True)
         return None
     print(f"✅ [STARTUP] API key found (ends with: ...{openai_api_key[-6:]})", flush=True)
+    
     print(f"🧠 [STARTUP] Loading OpenAI embedding model: {OPENAI_EMBEDDING_MODEL}", flush=True)
     embeddings = OpenAIEmbeddings(model=OPENAI_EMBEDDING_MODEL, openai_api_key=openai_api_key)
     print("✅ [STARTUP] OpenAI embeddings ready.", flush=True)
 
-    # 2. Check Database
+    # 2. Load ChromaDB (for semantic search)
     print(f"💾 [STARTUP] Checking ChromaDB at: {CHROMA_PATH}", flush=True)
     if not os.path.exists(CHROMA_PATH):
-        print(f"❌ [STARTUP] ChromaDB not found! Run 'traning.ipynb' first.", flush=True)
+        print(f"❌ [STARTUP] ChromaDB not found! Run your training notebook first.", flush=True)
         return None
-    print("✅ [STARTUP] ChromaDB directory exists.", flush=True)
-
-    # 3. Load ChromaDB (for semantic search)
+    
     print("📂 [STARTUP] Loading ChromaDB collection...", flush=True)
     db = Chroma(persist_directory=CHROMA_PATH, embedding_function=embeddings)
     chroma_count = db._collection.count()
     print(f"✅ [STARTUP] ChromaDB loaded — {chroma_count} vectors in collection.", flush=True)
-
-    # 4. Build BM25 from FRESH markdown files on disk
-    DATA_DIR = os.path.join(BASE_DIR, "Data")
-    print(f"📁 [STARTUP] Scanning markdown files in: {DATA_DIR}", flush=True)
-    md_files = glob.glob(os.path.join(DATA_DIR, "**", "*.md"), recursive=True)
-    print(f"   Found {len(md_files)} .md files:", flush=True)
-    for f in md_files:
-        print(f"     - {os.path.relpath(f, DATA_DIR)}", flush=True)
-
-    if not md_files:
-        print(f"❌ [STARTUP] No markdown files found in {DATA_DIR}", flush=True)
-        return None
-
-    splitter = RecursiveCharacterTextSplitter(chunk_size=1000, chunk_overlap=150)
-    fresh_docs = []
-    for filepath in md_files:
-        try:
-            loader = TextLoader(filepath, encoding="utf-8")
-            raw = loader.load()
-            chunks = splitter.split_documents(raw)
-            fresh_docs.extend(chunks)
-            print(f"   ✅ {os.path.basename(filepath)} → {len(chunks)} chunks", flush=True)
-        except Exception as e:
-            print(f"   ⚠️  Skipping {os.path.basename(filepath)}: {e}", flush=True)
-
-    print(f"📊 [STARTUP] BM25 total: {len(fresh_docs)} chunks from {len(md_files)} files.", flush=True)
-
-    # 5. Initialize Retrievers
-    print("⚙️  [STARTUP] Building BM25 index from fresh chunks...", flush=True)
-    bm25_retriever = BM25Retriever.from_documents(
-        fresh_docs,
-        preprocess_func=markdown_preprocess  # strips commas/asterisks so 'Principal,' matches 'principal'
-    )
-    bm25_retriever.k = 6
-    print("✅ [STARTUP] BM25 index ready (k=6, punctuation-stripped tokenizer).", flush=True)
-
+    
     print("⚙️  [STARTUP] Configuring ChromaDB semantic retriever (k=6)...", flush=True)
     chroma_retriever = db.as_retriever(search_kwargs={"k": 6})
     print("✅ [STARTUP] Semantic retriever ready.", flush=True)
 
+    # 3. Load pre-built BM25 Index from Disk
+    print(f"📁 [STARTUP] Loading BM25 index from: {BM25_PATH}", flush=True)
+    if not os.path.exists(BM25_PATH):
+        print(f"❌ [STARTUP] BM25 index not found! Run your training notebook first.", flush=True)
+        return None
+
+    try:
+        with open(BM25_PATH, "rb") as f:
+            bm25_retriever = pickle.load(f)
+        # Ensure it returns the top 6 matches just like your semantic retriever
+        bm25_retriever.k = 6
+        print("✅ [STARTUP] BM25 index loaded from disk.", flush=True)
+    except Exception as e:
+        print(f"❌ [STARTUP] Failed to load BM25 index: {e}", flush=True)
+        return None
+
+    # 4. Initialize Retrievers
     print("⚙️  [STARTUP] Building EnsembleRetriever (BM25: 0.5, Semantic: 0.5)...", flush=True)
     ensemble_retriever = EnsembleRetriever(
         retrievers=[bm25_retriever, chroma_retriever],
-        weights=[0.5, 0.5]  # Balanced — ChromaDB re-ingested with fresh optimized embeddings
+        weights=[0.5, 0.5] 
     )
     print("✅ [STARTUP] Hybrid Retrieval System ONLINE — ready for queries.", flush=True)
     return ensemble_retriever
@@ -151,7 +122,6 @@ def health_check():
 @app.on_event("startup")
 async def startup_event():
     """Pre-warm the retriever AND the OpenAI embedding TCP connection at server startup."""
-    import asyncio
     print("🔥 [BOOT] Pre-warming retrieval system...", flush=True)
     r = get_retriever()
     # Warm up the OpenAI embedding API connection so the first real query is instant
@@ -166,7 +136,6 @@ async def startup_event():
 @app.post("/debug")
 def debug_search(request: QueryRequest):
     """Debug endpoint: tests BM25 and semantic search independently."""
-    import time
     q = request.query
     print(f"\n{'#'*60}", flush=True)
     print(f"🛠️  [DEBUG] Query: '{q}'", flush=True)

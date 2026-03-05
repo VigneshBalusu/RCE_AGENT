@@ -27,8 +27,3 @@
 ## 6. Student Activities & Events
 * **Keywords:** IoT Events, IoT Projects, Hackathons, Smart India Hackathon, Smart Agriculture, Industrial Automation
 * **Activities:** Students engage in regular hands-on workshops on Building Smart Devices and Robotics Integration, actively participate in the Smart India Hackathon (SIH) Hardware Edition, and showcase Smart Agriculture and Industrial Automation prototypes at annual Project Expos.
-## 7. Placements & Career Scope
-
-* **Keywords:** IoT Jobs, IoT Placements, IoT Salary, IoT Roles, IoT Developer, Embedded Systems Engineer, Cloud Solution Architect
-* **Top Recruiters & Roles:** RCEE's strong placement record — with **600+ students placed annually** — extends actively to its IoT program. Graduates are recruited for roles such as IoT Developer (Firmware/Software), Embedded Systems Engineer, Cloud Solution Architect, and Network Engineer. Top recruiters visiting the campus include software MNCs such as **TCS, Infosys, Wipro, Cognizant, and Accenture**,with whom RCEE holds active industry tie-ups. Core hardware and embedded companies, along with high-demand AgriTech and HealthTech startups, also hire from the IoT batch. The RCEE Training & Placement Cell operates year-round, conducting aptitude training, technical preparation, and campus drives to ensure IoT graduates are industry-ready from day one.
-* **Average Package:** ₹3.5 – ₹4.5 LPA | **Highest Package:** Up to ₹6 LPA

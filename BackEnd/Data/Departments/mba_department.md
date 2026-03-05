@@ -23,7 +23,3 @@
 ## 5. Student Activities & Development
 * **Keywords:** MBA Events, Management Meet, Industrial Visits, Soft Skills, B-Quiz, MarketKshetra
 * **Activities & Training:** Students receive special training in Soft Skills, Aptitude, and Resume Building from the 1st Semester. The department organizes industrial visits to companies like Coca-Cola, Sangam Dairy, and Vizag Steel Plant, alongside management meets featuring B-Quiz, Young Manager contests, and the MarketKshetra marketing expo.
-## 6. Placements (MBA Specific)
-* **Keywords:** MBA Placements, MBA Salary, Management Jobs, MBA Recruiters, FinTech, Marketing Jobs, HR Roles
-* **Placement Statistics:** Recent batches have recorded strong placement activity, with the 2022–23 batch achieving 74 placements. The average package ranges from ₹3.0 LPA to ₹3.4 LPA, with the highest package reaching ₹3.4 LPA at FactSet for Finance/Research Analyst roles.
-* **Top Recruiters & Packages:** Key hiring partners include Finance/Data firms (FactSet at ₹3.4 LPA, Spandana Sphoorty Financial Ltd at ₹3.0 LPA), business groups (RAAM Group at ₹3.0 LPA, Naga Hanuman Group), Marketing/Digital firms (Savidha Digitals), BPO/Operations companies (Teleperformance at ₹1.76 LPA), and IT/Tech firms (Infosys, Cognizant, Hexaware, Tech Mahindra). Earlier batches were also placed at BYJU'S, Karvy, and MedVerve FinTech. The RCEE MBA Placement Cell actively conducts campus drives across Finance, Marketing, HR, and Operations domains.

@@ -28,7 +28,3 @@
 * **Keywords:** Mechanical Clubs, ISTE Chapter, IAENG, SDIWC, Professional Societies, Project Expo, Design Thinking, Go Karting
 * **Associations & Events:** Students participate in active chapters for ISTE, IAENG, and SDIWC. Key activities include "Project Expos" featuring student-built Go-Karts and robots, as well as specialized "Design Thinking" workshops.
 
-## 7. Placements (Mechanical Specific)
-* **Keywords:** Mechanical Placements, Core Mechanical Jobs, Mechanical Salary, Automotive Industry, Hyundai Jobs, Raam Group, Woosu Automotive, Lokesh Machine Tools, Kapston, Voltech, Accenture, TCS Ninja
-* **Placement Statistics:** The department has an excellent track record in core manufacturing and automotive sectors, with 37 placements in 2023-24 and 62 placements in 2022-23. The highest packages range from 4.5 LPA to 5 LPA depending on the sector.
-* **Top Recruiters:** Core automotive and manufacturing recruiters include MNCs like Accenture and TCS Ninja, Tech Mahindra, and Wipro.

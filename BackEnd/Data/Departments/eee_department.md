@@ -28,7 +28,3 @@
 * **Keywords:** EEE Clubs, VID YOUTH, EEE Association, EEE Events, PCB Design, Industrial Visits, Satish Dhawan Space Centre
 * **Associations & Events:** The official technical association, "VID-YOUTH" (formerly E-STAR), is organized by 3rd-year students to conduct technical quizzes, seminars, and industrial visits (such as to the Satish Dhawan Space Centre, SHAR). The department regularly hosts guest lectures and workshops on topics like "PCB Design for Smart Systems," "IoT Driven Solutions," and "AI in Power Sector."
 
-## 7. Placements (EEE Specific)
-* **Keywords:** EEE Placements, EEE Jobs, Core Companies EEE, EEE Salary, Top Recruiters, Voltech, Efftronics
-* **Placement Statistics:** EEE students secure roles in both core electrical firms and IT companies, achieving a placement percentage of ~75% to 80%. The median salary is b/w 3.5 - 4 LPA, with highest packages reaching upto 5 LPA
-* **Top Recruiters:** Core industry hiring partners include Voltech, Petrofac, Efftronics, and Amar Raja Batteries. IT and Software recruiters include TCS, Capgemini, Tech Mahindra, and Wipro.

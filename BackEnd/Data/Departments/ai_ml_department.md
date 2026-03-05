@@ -27,8 +27,3 @@
 ## 6. Student Activities & Projects
 * **Keywords:** AI&ML Events, ML Hackathons, AI Workshops, Generative AI, ML Cloud Deployment, AI Projects
 * **Activities:** Students engage in regular workshops on deploying ML models on the cloud and Generative AI (ChatGPT/Gemini) architecture, and develop real-world projects such as Autonomous Vehicles, Disease Prediction Systems, and Smart Surveillance.
-
-## 7. Placements (AI&ML Specific)
-* **Keywords:** AI&ML Placements, ML Jobs, AI Engineer Salary, Top Recruiters, NLP Scientist, Computer Vision Engineer
-* **Placement Statistics:** Graduates target specialized AI roles with average packages between 3.5 LPA and 4.5 LPA, and highest packages reaching 7 LPA from product companies.
-* **Top Recruiters & Roles:** Key recruiters include AI/Data firms  and MNCs (TCS Digital, Cognizant, Accenture) hiring for specialized roles such as Machine Learning Engineer, AI Developer, NLP Scientist, and Computer Vision Engineer.

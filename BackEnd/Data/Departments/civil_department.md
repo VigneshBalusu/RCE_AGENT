@@ -28,7 +28,3 @@
 * **Keywords:** Civil Clubs, RACE Association, Abhigyan Newsletter, Civil Events, Model Expo, Engineers Day
 * **Associations & Events:** The Royal Association of Civil Engineering (RACE) serves as the official student body organizing technical fests, Model Expos displaying advanced structures, and Engineer’s Day celebrations with technical quizzes. The department also publishes the "ABHIGYAN" newsletter showcasing student research and conducts hands-on workshops on Total Station and Revit Architecture.
 
-## 7. Placements (Civil Specific)
-* **Keywords:** Civil Placements, Civil Jobs, Core Companies, Civil Salary, Placement Stats Civil, Civil Recruiters
-* **Placement Statistics:** The department places 30 to 45 students annually in both core construction and IT firms. The average package ranges from 2.0 LPA to 3.0 LPA, with highest packages reaching 4.5 LPA in the IT sector and 2.4 LPA to 3.0 LPA in the Core sector.
-* **Top Recruiters:** Core construction recruiters include GC Infra Pvt Ltd, Jawani Infra Developers, Trends Infratech, and Stails Design. IT and software recruiters hiring civil students with coding skills include Pie-Infocomm, DXC Technology, Wipro, and TCS.

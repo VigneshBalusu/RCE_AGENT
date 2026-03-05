@@ -27,8 +27,3 @@
 ## 6. Student Activities & Opportunities
 * **Keywords:** AI&DS Events, AI Hackathons, Coding Competitions, Smart India Hackathon, Generative AI Workshops, AWS Certifications
 * **Activities:** Students actively participate in Smart India Hackathons and Kaggle competitions, attend hands-on workshops on Generative AI and Data Visualization, and pursue industry certifications via Coursera, AWS (Machine Learning Specialty), and NPTEL.
-
-## 7. Placements (AI&DS Specific)
-* **Keywords:** AI&DS Placements, Data Scientist Jobs, AI Salary, Placement Stats AI&DS, Top Recruiters, Software Developer
-* **Placement Statistics:** The department actively places students in Data Analytics and software roles, securing 44 offers in the recent 600+ college-wide placement drive. The college's median salary package is approximately 4 LPA, with the highest packages for top performers reaching up to 7 LPA. 
-* **Top Recruiters & Roles:** Students are recruited by MNCs and IT companies such as TCS, Wipro, Accenture. Typical roles include Data Analyst, Software Developer, and entry-level Machine Learning Engineers.

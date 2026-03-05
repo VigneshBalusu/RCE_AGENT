@@ -24,7 +24,3 @@
 * **Keywords:** Cyber Labs, Security Lab, Hacking Lab, Virtual Lab, Network Security Lab, Cryptography Lab, Unix Linux Lab
 * **Facilities:** The department features a unique Virtual Cyber Security Laboratory simulating cyber-attacks for training. Key labs include the Virtual Cyber Security Lab (a sandboxed environment for Ethical Hacking), Network Security Lab (Cisco Packet Tracer, Wireshark), Cryptography Lab (Python/Java encryption), Unix/Linux Lab (Kali Linux command-line tools), and a Project Lab with high-performance systems for heavy security simulations.
 
-## 6. Placements & Career Scope
-* **Keywords:** Cyber Jobs, Cyber Placements, CS Salary, Security Roles, Security Analyst, Penetration Tester, Network Security Engineer
-* **Placement Statistics:** As a niche branch, students are eligible for mainstream CSE software jobs plus specialized security roles. Recent batches have seen an average package of 3.5 LPA and a highest package of 7.0 LPA.
-* **Top Recruiters & Roles:** Key recruiters include security and cloud divisions of TCS, Accenture and Wipro, as well as general tech giants like TCS, Infosys, Accenture, and HCL. Students are hired for roles such as Security Analyst (SOC Analyst), Network Security Engineer.

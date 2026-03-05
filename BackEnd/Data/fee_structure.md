@@ -22,7 +22,7 @@
 * **Details:** A refundable caution deposit is collected once at the time of admission and is returned at the end of the course duration, subject to the clearance of dues or damages.
 
 ## 5. Fee Reimbursement (Government Schemes)
-* **Keywords:** Fee Reimbursement, JVD, Jagananna Vidya Deevena, Vasathi Deevena, Tuition Waiver, Scholarship Eligibility
+* **Keywords:** Fee Reimbursement, JVD, Jagananna Vidya Deevena, Vasathi Deevena, Tuition Waiver, Scholarship Eligibility, free seat BC caste, SC ST free admission, BC OBC fee exemption, government scholarship caste certificate, free tuition BC rank EAPCET
 * **Schemes:** Eligible students can avail of the Jagananna Vidya Deevena (JVD) for full tuition fee reimbursement and Vasathi Deevena for hostel/food allowances.
 * **Eligibility Criteria:** Requires a family annual income below ₹2.5 Lakhs, admission through the Category A (Convener) quota, maintenance of a minimum 75% attendance, and valid Income and Caste Certificates.
 

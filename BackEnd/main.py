@@ -148,6 +148,21 @@ class QueryRequest(BaseModel):
 def health_check():
     return {"status": "Database API Online", "type": "Hybrid RAG"}
 
+@app.on_event("startup")
+async def startup_event():
+    """Pre-warm the retriever AND the OpenAI embedding TCP connection at server startup."""
+    import asyncio
+    print("🔥 [BOOT] Pre-warming retrieval system...", flush=True)
+    r = get_retriever()
+    # Warm up the OpenAI embedding API connection so the first real query is instant
+    if r:
+        try:
+            r.retrievers[1].vectorstore.similarity_search("warmup", k=1)
+            print("🔌 [BOOT] OpenAI embedding connection established.", flush=True)
+        except Exception as e:
+            print(f"⚠️  [BOOT] Warmup ping failed (non-critical): {e}", flush=True)
+    print("🚀 [BOOT] Server fully ready — all queries will be fast.", flush=True)
+
 @app.post("/debug")
 def debug_search(request: QueryRequest):
     """Debug endpoint: tests BM25 and semantic search independently."""

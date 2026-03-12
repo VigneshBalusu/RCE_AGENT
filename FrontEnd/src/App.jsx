@@ -137,6 +137,21 @@ export default function App() {
         (typeof data.output === "string" ? data.output : null) ||
         data.text ||
         "Sorry, I couldn't get a response.";
+
+      // If n8n returned a transcript, replace the "🎤 Voice message sent" bubble
+      if (data.transcript) {
+        setMessages((m) => {
+          const updated = [...m];
+          for (let i = updated.length - 1; i >= 0; i--) {
+            if (updated[i].role === "user" && updated[i].data === "🎤 Voice message sent") {
+              updated[i] = { ...updated[i], data: `🎤 "${data.transcript}"` };
+              break;
+            }
+          }
+          return updated;
+        });
+      }
+
       setMessages((m) => [...m, { role: "assistant", type: "text", data: text }]);
     } catch (err) {
       setMessages((m) => [...m, {

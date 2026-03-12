@@ -101,7 +101,41 @@ def get_retriever():
     print("✅ [STARTUP] Hybrid Retrieval System ONLINE — ready for queries.", flush=True)
     return ensemble_retriever
 
-# --- 4. FASTAPI APP SETUP ---
+# --- 4. QUERY EXPANSION ---
+# Maps common abbreviations/aliases to their full forms so BM25 doesn't
+# misfire on ambiguous short tokens (e.g. "aids" matching MBA/Mechanical sections)
+ABBREVIATION_MAP = {
+    r'\baids\b':       'AI&DS Artificial Intelligence Data Science',
+    r'\bai\s*&?\s*ds\b': 'AI&DS Artificial Intelligence Data Science',
+    r'\bcse\b':        'CSE Computer Science Engineering',
+    r'\bai\s*&?\s*ml\b': 'CSE AIML Artificial Intelligence Machine Learning',
+    r'\baiml\b':       'CSE AIML Artificial Intelligence Machine Learning',
+    r'\biot\b':        'CSE IOT Internet of Things',
+    r'\bcs\b':         'CSE Cyber Security',
+    r'\bece\b':        'ECE Electronics Communication Engineering',
+    r'\beee\b':        'EEE Electrical Electronics Engineering',
+    r'\bcivil\b':      'Civil Engineering',
+    r'\bmech\b':       'Mechanical Engineering',
+    r'\bmba\b':        'MBA Business Administration ICET',
+    r'\bmtech\b':      'M.Tech Postgraduate GATE PGECET',
+    r'\beamcet\b':     'AP EAPCET EAMCET',
+    r'\becet\b':       'AP ECET Lateral Entry Diploma',
+    r'\bicet\b':       'AP ICET MBA',
+    r'\beapcet\b':     'AP EAPCET EAMCET',
+}
+
+import re as _re
+
+def expand_query(query: str) -> str:
+    """Expand known abbreviations to full forms before retrieval."""
+    expanded = query.lower()
+    for pattern, replacement in ABBREVIATION_MAP.items():
+        expanded = _re.sub(pattern, replacement, expanded, flags=_re.IGNORECASE)
+    if expanded != query.lower():
+        print(f"🔄 [QUERY] Expanded: '{query}' → '{expanded}'", flush=True)
+    return expanded
+
+# --- 5. FASTAPI APP SETUP ---
 app = FastAPI()
 
 app.add_middleware(
@@ -199,7 +233,8 @@ def search_database_only(request: QueryRequest):
     # Perform Hybrid Search
     print(f"🔎 [QUERY] Running hybrid search (BM25 + Semantic)...", flush=True)
     t0 = time.time()
-    results = retriever.invoke(request.query)
+    expanded = expand_query(request.query)
+    results = retriever.invoke(expanded)
     elapsed = round(time.time() - t0, 2)
     print(f"⏱️  [QUERY] Search completed in {elapsed}s — got {len(results)} raw results.", flush=True)
     

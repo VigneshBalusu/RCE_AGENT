@@ -106,6 +106,7 @@ def get_retriever():
 # misfire on ambiguous short tokens (e.g. "aids" matching MBA/Mechanical sections)
 ABBREVIATION_MAP = {
     r'\baids\b':       'AI&DS Artificial Intelligence Data Science',
+    r'\bids\b':        'AI&DS Artificial Intelligence Data Science',
     r'\bai\s*&?\s*ds\b': 'AI&DS Artificial Intelligence Data Science',
     r'\bcse\b':        'CSE Computer Science Engineering',
     r'\bai\s*&?\s*ml\b': 'CSE AIML Artificial Intelligence Machine Learning',
@@ -122,6 +123,14 @@ ABBREVIATION_MAP = {
     r'\becet\b':       'AP ECET Lateral Entry Diploma',
     r'\bicet\b':       'AP ICET MBA',
     r'\beapcet\b':     'AP EAPCET EAMCET',
+    # Cutoff-related synonyms (students say "marks" but data says "ranks")
+    r'\bcut\s*-?\s*off\s+marks?\b': 'cutoff ranks closing rank last rank EAPCET',
+    r'\bcutoff\s+marks?\b':         'cutoff ranks closing rank last rank EAPCET',
+    r'\bclosing\s+marks?\b':        'closing rank last rank cutoff',
+    # Category synonyms
+    r'\bgeneral\s+category\b':      'OC open category',
+    r'\bgeneral\b':                 'OC open category',
+    r'\bopen\s+category\b':         'OC open category',
 }
 
 import re as _re
@@ -155,17 +164,24 @@ def health_check():
 
 @app.on_event("startup")
 async def startup_event():
-    """Pre-warm the retriever AND the OpenAI embedding TCP connection at server startup."""
-    print("🔥 [BOOT] Pre-warming retrieval system...", flush=True)
-    r = get_retriever()
-    # Warm up the OpenAI embedding API connection so the first real query is instant
-    if r:
-        try:
-            r.retrievers[1].vectorstore.similarity_search("warmup", k=1)
-            print("🔌 [BOOT] OpenAI embedding connection established.", flush=True)
-        except Exception as e:
-            print(f"⚠️  [BOOT] Warmup ping failed (non-critical): {e}", flush=True)
-    print("🚀 [BOOT] Server fully ready — all queries will be fast.", flush=True)
+    """Pre-warm the retriever in a background thread so the server starts instantly."""
+    import asyncio
+
+    def _warmup():
+        print("🔥 [BOOT] Pre-warming retrieval system (background)...", flush=True)
+        r = get_retriever()
+        if r:
+            try:
+                r.retrievers[1].vectorstore.similarity_search("warmup", k=1)
+                print("🔌 [BOOT] OpenAI embedding connection established.", flush=True)
+            except Exception as e:
+                print(f"⚠️  [BOOT] Warmup ping failed (non-critical): {e}", flush=True)
+        print("🚀 [BOOT] Retrieval system fully ready.", flush=True)
+
+    # Run heavy initialization in a thread so the server accepts requests immediately
+    loop = asyncio.get_event_loop()
+    loop.run_in_executor(None, _warmup)
+    print("⚡ [BOOT] Server is UP — retriever warming up in background...", flush=True)
 
 @app.post("/debug")
 def debug_search(request: QueryRequest):
@@ -230,11 +246,10 @@ def search_database_only(request: QueryRequest):
         print("❌ [QUERY] Retriever unavailable — aborting.", flush=True)
         return {"results": ["Error: Database unavailable. Check server logs."]}
     
-    # Perform Hybrid Search
+    # Perform Hybrid Search (query already rewritten by n8n Query Rewriter)
     print(f"🔎 [QUERY] Running hybrid search (BM25 + Semantic)...", flush=True)
     t0 = time.time()
-    expanded = expand_query(request.query)
-    results = retriever.invoke(expanded)
+    results = retriever.invoke(request.query)
     elapsed = round(time.time() - t0, 2)
     print(f"⏱️  [QUERY] Search completed in {elapsed}s — got {len(results)} raw results.", flush=True)
     
@@ -262,4 +277,4 @@ def search_database_only(request: QueryRequest):
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 8000))
     print(f"🚀 Starting Server on Port {port}...")
-    uvicorn.run(app, host="0.0.0.0", port=port)
+    uvicorn.run("main:app", host="0.0.0.0", port=port, reload=True)

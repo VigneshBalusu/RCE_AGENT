@@ -21,7 +21,7 @@
 | **Total B.Tech Seats** | **1,020** |
 
 ### Emerging Technologies (Computer Science Cluster)
-* **Keywords:** CSE, AI DS, AI ML, Cyber Security, IoT, Industry 4.0, Software Development, Smart Technologies
+* **Keywords:** emerging technology branches, computer science cluster, intake seats, branch description, software development, smart technologies
 * **Computer Science and Engineering (CSE):** Focuses on software engineering, algorithms, and full-stack development. Intake: 180 seats.
 * **Artificial Intelligence & Data Science (AI&DS):** Focuses on Big Data, predictive analytics, and neural networks. Intake: 180 seats.
 * **Artificial Intelligence & Machine Learning (AI&ML):** Focuses on intelligent systems, robotics, and deep learning. Intake: 180 seats.
@@ -29,7 +29,7 @@
 * **Internet of Things (IoT):** Combines hardware and software to build smart connected devices. Intake: 60 seats.
 
 ### Core Engineering Branches
-* **Keywords:** ECE, EEE, Mechanical, Civil, Core Engineering, Hardware Engineering, Foundational Engineering
+* **Keywords:** core engineering branches, hardware engineering, foundational engineering, intake seats, branch description
 * **Electronics and Communication Engineering (ECE):** Focuses on VLSI, embedded systems, and communication networks. Intake: 180 seats.
 * **Electrical and Electronics Engineering (EEE):** Focuses on power systems, renewable energy, and electric drives. Intake: 60 seats.
 * **Mechanical Engineering (ME):** Focuses on robotics, automobiles, and thermal engineering. Intake: 60 seats.

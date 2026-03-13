@@ -467,6 +467,46 @@ body {
   font-size: 13px;
 }
 
+/* ─── VOICE WAVE ANIMATION ─── */
+.voice-wave {
+  display: flex;
+  align-items: center;
+  gap: 3px;
+  padding: 2px 0;
+}
+
+.wave-bar {
+  width: 3px;
+  height: 16px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.85);
+  animation: wave-pulse 1s ease-in-out infinite;
+}
+
+.wave-bar:nth-child(1) { animation-delay: 0s; height: 10px; }
+.wave-bar:nth-child(2) { animation-delay: 0.15s; height: 18px; }
+.wave-bar:nth-child(3) { animation-delay: 0.3s; height: 12px; }
+.wave-bar:nth-child(4) { animation-delay: 0.45s; height: 20px; }
+.wave-bar:nth-child(5) { animation-delay: 0.6s; height: 14px; }
+
+.wave-label {
+  font-size: 13px;
+  opacity: 0.9;
+  margin-left: 8px;
+  color: rgba(255, 255, 255, 0.9);
+}
+
+@keyframes wave-pulse {
+  0%, 100% {
+    transform: scaleY(0.4);
+    opacity: 0.5;
+  }
+  50% {
+    transform: scaleY(1);
+    opacity: 1;
+  }
+}
+
 /* ─── TYPING LOADER ─── */
 .typing-bubble {
   display: flex;
@@ -506,6 +546,21 @@ body {
     transform: translateY(-6px);
     opacity: 1;
   }
+}
+
+/* ─── TYPEWRITER CURSOR ─── */
+.msg.assistant.typing-active::after {
+  content: "▊";
+  display: inline;
+  animation: blink-cursor 0.6s step-end infinite;
+  color: var(--dot-color);
+  font-weight: 400;
+  margin-left: 1px;
+}
+
+@keyframes blink-cursor {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0; }
 }
 
 /* ─── INPUT BAR ─── */

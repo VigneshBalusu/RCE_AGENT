@@ -19,6 +19,8 @@ export default function App() {
   const [isRecording, setIsRecording] = useState(false);
   const [theme, setTheme] = useState("dark");
   const [isLoading, setIsLoading] = useState(false);
+  const [isTyping, setIsTyping] = useState(false);
+  const typingRef = useRef({ fullText: "", index: 0, timer: null });
 
   const recorderRef = useRef(null);
   const chunksRef = useRef([]);
@@ -32,7 +34,51 @@ export default function App() {
   // Auto-scroll to bottom on new messages
   useEffect(() => {
     chatEndRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [messages, isLoading]);
+  }, [messages, isLoading, isTyping]);
+
+  // Cleanup typewriter timer on unmount
+  useEffect(() => {
+    return () => {
+      if (typingRef.current.timer) clearInterval(typingRef.current.timer);
+    };
+  }, []);
+
+  /* ---------------- TYPEWRITER EFFECT ---------------- */
+  const startTypewriter = (fullText) => {
+    // Clear any existing timer
+    if (typingRef.current.timer) clearInterval(typingRef.current.timer);
+
+    // Add empty assistant message
+    setMessages((m) => [...m, { role: "assistant", type: "text", data: "" }]);
+    setIsTyping(true);
+    typingRef.current = { fullText, index: 0, timer: null };
+
+    const CHARS_PER_TICK = 3; // characters per interval
+    const TICK_MS = 15; // milliseconds per tick
+
+    typingRef.current.timer = setInterval(() => {
+      typingRef.current.index += CHARS_PER_TICK;
+      const currentText = typingRef.current.fullText.slice(0, typingRef.current.index);
+
+      setMessages((m) => {
+        const updated = [...m];
+        updated[updated.length - 1] = { role: "assistant", type: "text", data: currentText };
+        return updated;
+      });
+
+      if (typingRef.current.index >= typingRef.current.fullText.length) {
+        clearInterval(typingRef.current.timer);
+        typingRef.current.timer = null;
+        setIsTyping(false);
+        // Ensure final text is complete
+        setMessages((m) => {
+          const updated = [...m];
+          updated[updated.length - 1] = { role: "assistant", type: "text", data: typingRef.current.fullText };
+          return updated;
+        });
+      }
+    }, TICK_MS);
+  };
 
   /* ---------------- TEXT ---------------- */
   const sendText = async (text) => {
@@ -91,8 +137,8 @@ export default function App() {
 
   const sendVoice = async () => {
     const audioBlob = new Blob(chunksRef.current, { type: "audio/wav" });
-    // Show a voice message bubble in chat while we wait
-    setMessages((m) => [...m, { role: "user", type: "text", data: "🎤 Voice message sent" }]);
+    // Show a voice processing animation while we wait
+    setMessages((m) => [...m, { role: "user", type: "voice-processing", data: "__VOICE_PROCESSING__" }]);
     setIsLoading(true);
 
     const formData = new FormData();
@@ -125,9 +171,9 @@ export default function App() {
         if (Array.isArray(data)) data = data[0];
       } catch {
         // n8n sent plain text (not JSON) — use directly
-        setMessages((m) => [...m, { role: "assistant", type: "text", data: rawText }]);
-        setStatus("Ready");
         setIsLoading(false);
+        setStatus("Ready");
+        startTypewriter(rawText);
         return;
       }
       const text =
@@ -143,8 +189,8 @@ export default function App() {
         setMessages((m) => {
           const updated = [...m];
           for (let i = updated.length - 1; i >= 0; i--) {
-            if (updated[i].role === "user" && updated[i].data === "🎤 Voice message sent") {
-              updated[i] = { ...updated[i], data: `🎤 "${data.transcript}"` };
+            if (updated[i].role === "user" && updated[i].data === "__VOICE_PROCESSING__") {
+              updated[i] = { role: "user", type: "text", data: data.transcript };
               break;
             }
           }
@@ -152,7 +198,9 @@ export default function App() {
         });
       }
 
-      setMessages((m) => [...m, { role: "assistant", type: "text", data: text }]);
+      setIsLoading(false);
+      setStatus("Ready");
+      startTypewriter(text);
     } catch (err) {
       setMessages((m) => [...m, {
         role: "assistant", type: "text",
@@ -160,8 +208,10 @@ export default function App() {
       }]);
     }
 
-    setStatus("Ready");
-    setIsLoading(false);
+    if (!isTyping) {
+      setStatus("Ready");
+      setIsLoading(false);
+    }
   };
 
 
@@ -229,8 +279,17 @@ export default function App() {
                 </svg>
               </div>
             )}
-            <div className={`msg ${m.role}`}>
-              {m.type === "audio" ? (
+            <div className={`msg ${m.role}${isTyping && m.role === "assistant" && i === messages.length - 1 ? " typing-active" : ""}`}>
+              {m.type === "voice-processing" ? (
+                <div className="voice-wave">
+                  <span className="wave-bar" />
+                  <span className="wave-bar" />
+                  <span className="wave-bar" />
+                  <span className="wave-bar" />
+                  <span className="wave-bar" />
+                  <span className="wave-label">Processing voice...</span>
+                </div>
+              ) : m.type === "audio" ? (
                 <span className="audio-label">{m.data}</span>
               ) : (
                 <ReactMarkdown remarkPlugins={[remarkGfm]}>{m.data}</ReactMarkdown>

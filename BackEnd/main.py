@@ -250,9 +250,7 @@ async def transcribe_audio(file: UploadFile = FastAPIFile(...)):
     
     # Prepare form data
     data = aiohttp.FormData()
-    # Strip codec info from content_type (e.g., "audio/webm;codecs=opus" → "audio/webm")
-    clean_content_type = file.content_type.split(';')[0] if file.content_type else 'audio/webm'
-    data.add_field('file', audio_content, filename=file.filename, content_type=clean_content_type)
+    data.add_field('file', audio_content, filename=file.filename, content_type=file.content_type)
     data.add_field('model', 'saarika:v2.5')
     # Auto-detect language or specify Telugu
     # data.add_field('language_code', 'te-IN') # Optional: force Telugu
@@ -288,7 +286,7 @@ def search_database_only(request: QueryRequest):
         print("❌ [QUERY] Retriever unavailable — aborting.", flush=True)
         return {"results": ["Error: Database unavailable. Check server logs."]}
     
-    # Perform Hybrid Search (query already rewritten by n8n Query Rewriter)
+    # Perform Hybrid Search
     print(f"🔎 [QUERY] Running hybrid search (BM25 + Semantic)...", flush=True)
     t0 = time.time()
     results = retriever.invoke(request.query)

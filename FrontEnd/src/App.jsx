@@ -104,7 +104,7 @@ export default function App() {
     }
   };
 
-  /* ---------------- VOICE ---------------- */
+  /* ---------------- VOICE (mic → n8n, original behavior) ---------------- */
   const toggleRecording = async () => {
     if (isRecording) stopRecording();
     else startRecording();
@@ -116,18 +116,24 @@ export default function App() {
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
       recorderRef.current = new MediaRecorder(stream);
       chunksRef.current = [];
-      recorderRef.current.ondataavailable = (e) => chunksRef.current.push(e.data);
+      // console.log("🎙️ [MIC] Recording started — MIME:", recorderRef.current.mimeType);
+      recorderRef.current.ondataavailable = (e) => {
+        // console.log("🎙️ [MIC] Chunk received — size:", e.data.size, "bytes");
+        chunksRef.current.push(e.data);
+      };
       recorderRef.current.onstop = sendVoice;
       recorderRef.current.start();
       setIsRecording(true);
       setStatus("Recording...");
-    } catch {
+    } catch (err) {
+      console.error("🎙️ [MIC] Error:", err);
       alert("Could not access microphone. Please check permissions.");
     }
   };
 
   const stopRecording = () => {
     if (recorderRef.current && recorderRef.current.state !== "inactive") {
+      // console.log("🎙️ [MIC] Stopping recording...");
       recorderRef.current.stop();
       recorderRef.current.stream?.getTracks().forEach((t) => t.stop());
       setIsRecording(false);
@@ -136,19 +142,81 @@ export default function App() {
   };
 
   const sendVoice = async () => {
-    const audioBlob = new Blob(chunksRef.current, { type: "audio/wav" });
+    // console.log("🎙️ [MIC] sendVoice called — chunks:", chunksRef.current.length);
+    
+    // Check the mimeType from MediaRecorder
+    const mimeType = recorderRef.current?.mimeType || "audio/webm";
+    // console.log("🎙️ [MIC] Using mimeType:", mimeType);
+    
+    const audioBlob = new Blob(chunksRef.current, { type: mimeType });
+    // console.log("🎙️ [MIC] Blob created — size:", audioBlob.size, "bytes, type:", audioBlob.type);
+
+    if (audioBlob.size < 1000) {
+      // console.warn("⚠️ [MIC] Audio blob too small! Recording may have failed.");
+    }
+
     // Show a voice processing animation while we wait
     setMessages((m) => [...m, { role: "user", type: "voice-processing", data: "__VOICE_PROCESSING__" }]);
     setIsLoading(true);
 
     const formData = new FormData();
-    formData.append("file", audioBlob, "voice.wav");
-    formData.append("voice_mode", "true");
+    // Use the actual file extension based on mimeType
+    const fileExt = mimeType.includes("webm") ? "webm" : "wav";
+    formData.append("file", audioBlob, `voice.${fileExt}`);
+
+    // Send to the new transcription endpoint in main.py
+    const TRANSCRIBE_URL = "http://localhost:8000/transcribe";
+    // console.log("🎙️ [MIC] Sending to:", TRANSCRIBE_URL);
 
     try {
-      const res = await fetch(API_URL, { method: "POST", body: formData });
-      await handleResponse(res);
-    } catch {
+      const res = await fetch(TRANSCRIBE_URL, { method: "POST", body: formData });
+      // console.log("🎙️ [MIC] Response status:", res.status, res.statusText);
+      
+      if (!res.ok) {
+        throw new Error(`HTTP ${res.status}`);
+      }
+      
+      const data = await res.json();
+      // console.log("🎙️ [MIC] Response data:", data);
+      
+      // Handle the transcription response
+      if (data.transcript) {
+        // Update the voice-processing bubble with the transcript
+        setMessages((m) => {
+          const updated = [...m];
+          for (let i = updated.length - 1; i >= 0; i--) {
+            if (updated[i].role === "user" && updated[i].data === "__VOICE_PROCESSING__") {
+              updated[i] = { role: "user", type: "text", data: data.transcript };
+              break;
+            }
+          }
+          return updated;
+        });
+        
+        // Send to n8n API (transcript is already shown in messages above)
+        try {
+          const res = await fetch(API_URL, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ query: data.transcript, voice_mode: true }),
+          });
+          await handleResponse(res);
+        } catch (error) {
+          setMessages((m) => [...m, { role: "assistant", type: "text", data: "⚠️ Network error. Please try again." }]);
+          setStatus("Ready");
+          setIsLoading(false);
+        }
+      } else {
+        // No transcript received
+        setMessages((m) => [...m, {
+          role: "assistant", type: "text",
+          data: "🎤 I couldn't hear that clearly. Please hold the mic button, speak clearly, then release."
+        }]);
+        setStatus("Ready");
+        setIsLoading(false);
+      }
+    } catch (err) {
+      console.error("🎙️ [MIC] Fetch error:", err);
       setMessages((m) => [...m, { role: "assistant", type: "text", data: "⚠️ Voice request failed. Please try again." }]);
       setStatus("Ready");
       setIsLoading(false);
@@ -162,7 +230,7 @@ export default function App() {
     // Always read as text — voice input now returns a text answer, not audio
     try {
       const rawText = await res.text();
-      console.log("📡 Raw n8n response:", rawText); // debug — remove later
+      // console.log("📡 Raw n8n response:", rawText); // debug — remove later
       if (!rawText.trim()) throw new Error("Empty response");
 
       let data;
@@ -176,31 +244,55 @@ export default function App() {
         startTypewriter(rawText);
         return;
       }
-      const text =
-        data.answer ||
-        (Array.isArray(data.output) ? data.output[0]?.content?.[0]?.text : null) ||
-        data.translated_text ||
-        (typeof data.output === "string" ? data.output : null) ||
-        data.text ||
-        "Sorry, I couldn't get a response.";
-
-      // If n8n returned a transcript, replace the "🎤 Voice message sent" bubble
-      if (data.transcript) {
-        setMessages((m) => {
-          const updated = [...m];
-          for (let i = updated.length - 1; i >= 0; i--) {
-            if (updated[i].role === "user" && updated[i].data === "__VOICE_PROCESSING__") {
-              updated[i] = { role: "user", type: "text", data: data.transcript };
-              break;
-            }
-          }
-          return updated;
-        });
+      // console.log("📡 [RESPONSE] Full data object:", data); // Debug: show full response
+      
+      let text = data.answer;
+      
+      // If answer is empty, check for nested translator output
+      if (!text || text.trim() === "") {
+        // Check if translator model output is in the response
+        if (data.DB?.output?.[0]?.translated_text) {
+          text = data.DB.output[0].translated_text;
+          // console.log("🌐 [RESPONSE] Using DB.output[0].translated_text:", text);
+        } else if (data.Translator?.translated_text) {
+          text = data.Translator.translated_text;
+          // console.log("🌐 [RESPONSE] Using Translator.translated_text:", text);
+        } else if (data.translated_text) {
+          text = data.translated_text;
+          // console.log("🌐 [RESPONSE] Using translated_text:", text);
+        }
       }
+      
+      // Fallback to other common response fields
+      if (!text || text.trim() === "") {
+        text = Array.isArray(data.output) ? data.output[0]?.content?.[0]?.text : null;
+        // console.log("🔄 [RESPONSE] Using output[0].content[0].text:", text);
+      }
+      
+      if (!text || text.trim() === "") {
+        text = (typeof data.output === "string" ? data.output : null);
+        // console.log("🔄 [RESPONSE] Using output as string:", text);
+      }
+      
+      if (!text || text.trim() === "") {
+        text = data.text;
+        // console.log("🔄 [RESPONSE] Using text field:", text);
+      }
+      
+      text = text || "";
 
       setIsLoading(false);
       setStatus("Ready");
-      startTypewriter(text);
+
+      if (text) {
+        startTypewriter(text);
+      } else {
+        // n8n returned empty answer — voice wasn't captured properly
+        setMessages((m) => [...m, {
+          role: "assistant", type: "text",
+          data: "🎤 I couldn't hear that clearly. Please hold the mic button, speak clearly, then release."
+        }]);
+      }
     } catch (err) {
       setMessages((m) => [...m, {
         role: "assistant", type: "text",
@@ -321,15 +413,16 @@ export default function App() {
             disabled={status !== "Ready"}
             onKeyDown={(e) => e.key === "Enter" && sendText()}
           />
+          {/* MIC BUTTON — original: record → send to n8n */}
           <button
             className={`mic-btn ${isRecording ? "recording" : ""}`}
             onClick={toggleRecording}
-            disabled={status !== "Ready" && status !== "Recording..."}
+            disabled={(status !== "Ready" && status !== "Recording...") || isTyping}
             title={isRecording ? "Stop recording" : "Start recording"}
           >
             {isRecording ? "⏹️" : "🎙️"}
           </button>
-          <button className="send-btn" onClick={() => sendText()} disabled={status !== "Ready"}>
+          <button className="send-btn" onClick={() => sendText()} disabled={status !== "Ready" || isTyping}>
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
               <line x1="22" y1="2" x2="11" y2="13" /><polygon points="22 2 15 22 11 13 2 9 22 2" />
             </svg>

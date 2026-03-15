@@ -5,11 +5,10 @@ from dotenv import load_dotenv
 
 # Load environment variables from .env file
 load_dotenv(dotenv_path=os.path.join(os.path.dirname(os.path.abspath(__file__)), ".env"))
-from fastapi import FastAPI, WebSocket, WebSocketDisconnect
+from fastapi import FastAPI, WebSocket, WebSocketDisconnect, UploadFile, File as FastAPIFile
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from langchain_classic.retrievers import EnsembleRetriever
-from bot import run_voice_agent
 # --- 1. CONFIGURATION ---
 # Updated to match the model you used in your training notebook
 OPENAI_EMBEDDING_MODEL = "text-embedding-3-small"  
@@ -162,30 +161,6 @@ class QueryRequest(BaseModel):
 def health_check():
     return {"status": "Database API Online", "type": "Hybrid RAG"}
 
-@app.websocket("/ws/voice")
-async def voice_websocket_endpoint(websocket: WebSocket):
-    """
-    Endpoint for the real-time voice chat.
-    """
-    await websocket.accept()
-    print("📞 [SERVER] Incoming voice call... WebSocket connected.")
-    
-    # 1. Grab the active hybrid search database
-    retriever = get_retriever()
-    
-    if not retriever:
-        print("❌ [SERVER] Retriever failed to load. Cannot start voice agent.")
-        await websocket.close()
-        return
-
-    try:
-        # 2. Hand the connection AND the database over to Pipecat
-        await run_voice_agent(websocket, retriever)
-    except WebSocketDisconnect:
-        print("📞 [SERVER] Call ended by user.")
-    except Exception as e:
-        print(f"❌ [SERVER] Voice pipeline error: {e}")
-
 @app.on_event("startup")
 async def startup_event():
     """Pre-warm the retriever in a background thread so the server starts instantly."""
@@ -257,6 +232,49 @@ def debug_search(request: QueryRequest):
         if len(ensemble_out) >= 6: break
 
     return {"bm25": bm25_out, "semantic": semantic_out, "ensemble": ensemble_out}
+
+@app.post("/transcribe")
+async def transcribe_audio(file: UploadFile = FastAPIFile(...)):
+    """
+    Transcribe audio file using Sarvam STT API.
+    """
+    import aiohttp
+    from fastapi import UploadFile, File
+    
+    api_key = os.getenv("SARVAM_API_KEY")
+    if not api_key:
+        return {"error": "SARVAM_API_KEY not set"}
+    
+    # Read audio file
+    audio_content = await file.read()
+    
+    # Prepare form data
+    data = aiohttp.FormData()
+    # Strip codec info from content_type (e.g., "audio/webm;codecs=opus" → "audio/webm")
+    clean_content_type = file.content_type.split(';')[0] if file.content_type else 'audio/webm'
+    data.add_field('file', audio_content, filename=file.filename, content_type=clean_content_type)
+    data.add_field('model', 'saarika:v2.5')
+    # Auto-detect language or specify Telugu
+    # data.add_field('language_code', 'te-IN') # Optional: force Telugu
+    
+    url = "https://api.sarvam.ai/speech-to-text"
+    
+    async with aiohttp.ClientSession() as session:
+        headers = {'Authorization': f'Bearer {api_key}'}
+        try:
+            async with session.post(url, data=data, headers=headers) as response:
+                if response.status == 200:
+                    result = await response.json()
+                    # Sarvam response format: {"transcript": "...", "language_code": "..."}
+                    transcript = result.get('transcript', '')
+                    return {"transcript": transcript}
+                else:
+                    error_text = await response.text()
+                    print(f"❌ Sarvam API Error: {response.status} - {error_text}")
+                    return {"error": f"STT API failed: {response.status}"}
+        except Exception as e:
+            print(f"❌ Exception calling Sarvam API: {e}")
+            return {"error": str(e)}
 
 @app.post("/search")
 def search_database_only(request: QueryRequest):

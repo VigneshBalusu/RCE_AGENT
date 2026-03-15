@@ -5,11 +5,11 @@ from dotenv import load_dotenv
 
 # Load environment variables from .env file
 load_dotenv(dotenv_path=os.path.join(os.path.dirname(os.path.abspath(__file__)), ".env"))
-from fastapi import FastAPI
+from fastapi import FastAPI, WebSocket, WebSocketDisconnect
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from langchain_classic.retrievers import EnsembleRetriever
-
+from bot import run_voice_agent
 # --- 1. CONFIGURATION ---
 # Updated to match the model you used in your training notebook
 OPENAI_EMBEDDING_MODEL = "text-embedding-3-small"  
@@ -161,6 +161,30 @@ class QueryRequest(BaseModel):
 @app.get("/")
 def health_check():
     return {"status": "Database API Online", "type": "Hybrid RAG"}
+
+@app.websocket("/ws/voice")
+async def voice_websocket_endpoint(websocket: WebSocket):
+    """
+    Endpoint for the real-time voice chat.
+    """
+    await websocket.accept()
+    print("📞 [SERVER] Incoming voice call... WebSocket connected.")
+    
+    # 1. Grab the active hybrid search database
+    retriever = get_retriever()
+    
+    if not retriever:
+        print("❌ [SERVER] Retriever failed to load. Cannot start voice agent.")
+        await websocket.close()
+        return
+
+    try:
+        # 2. Hand the connection AND the database over to Pipecat
+        await run_voice_agent(websocket, retriever)
+    except WebSocketDisconnect:
+        print("📞 [SERVER] Call ended by user.")
+    except Exception as e:
+        print(f"❌ [SERVER] Voice pipeline error: {e}")
 
 @app.on_event("startup")
 async def startup_event():

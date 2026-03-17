@@ -1,150 +1,195 @@
 import sys
 import os
+import time
+import re
 import uvicorn
+import asyncio
+from contextlib import asynccontextmanager
 from dotenv import load_dotenv
 
-# Load environment variables from .env file
-load_dotenv(dotenv_path=os.path.join(os.path.dirname(os.path.abspath(__file__)), ".env"))
-from fastapi import FastAPI, WebSocket, WebSocketDisconnect, UploadFile, File as FastAPIFile
+from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
-from langchain_classic.retrievers import EnsembleRetriever
-# --- 1. CONFIGURATION ---
-# Updated to match the model you used in your training notebook
-OPENAI_EMBEDDING_MODEL = "text-embedding-3-small"  
+
+from langchain_openai import OpenAIEmbeddings
+from langchain_chroma import Chroma
+
+
+# =========================================================
+# ENV
+# =========================================================
+
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+load_dotenv(os.path.join(BASE_DIR, ".env"))
+
+OPENAI_EMBEDDING_MODEL = "text-embedding-3-small"
+RETRIEVER_K = 12
 CHROMA_PATH = os.path.join(BASE_DIR, "chroma_db")
-BM25_PATH = os.path.join(BASE_DIR, "bm25_index.pkl")
 
-# --- 2. CLOUD COMPATIBILITY (Safety Check for Render/Streamlit) ---
+
+# =========================================================
+# SQLITE FIX (cloud compatibility)
+# =========================================================
+
 try:
-    __import__('pysqlite3')
-    sys.modules['sqlite3'] = sys.modules.pop('pysqlite3')
-    print("✅ Cloud Environment: Swapped to pysqlite3")
+    __import__("pysqlite3")
+    sys.modules["sqlite3"] = sys.modules.pop("pysqlite3")
+    print("[STARTUP] Using pysqlite3 (cloud mode)")
 except ImportError:
-    print("💻 Local Environment: Using default sqlite3")
+    print("[STARTUP] Using default sqlite3 (local mode)")
 
-# --- 3. RETRIEVER SETUP ---
-# Global variable to cache the retriever so we don't reload it on every request
-ensemble_retriever = None
+
+# =========================================================
+# GLOBAL RETRIEVER
+# =========================================================
+
+chroma_retriever = None
+
 
 def get_retriever():
-    global ensemble_retriever
-    if ensemble_retriever is not None:
-        return ensemble_retriever
-    
-    print("⏳ [STARTUP] Initializing retrieval system...", flush=True)
-    
-    # Lazy imports to prevent startup crashes if libs are missing
-    try:
-        import time
-        import pickle
-        from langchain_openai import OpenAIEmbeddings
-        from langchain_community.vectorstores import Chroma
-        from langchain_classic.retrievers import EnsembleRetriever
-        print("✅ [STARTUP] All imports successful.", flush=True)
 
-    except ImportError as e:
-        print(f"❌ [STARTUP] Critical Import Error: {e}", flush=True)
+    global chroma_retriever
+
+    if chroma_retriever:
+        return chroma_retriever
+
+    print("[STARTUP] Initializing semantic retriever...")
+
+    api_key = os.getenv("OPENAI_API_KEY")
+
+    if not api_key:
+        print("[ERROR] OPENAI_API_KEY missing in .env")
         return None
 
-    # 1. Setup Embeddings
-    print(f"🔑 [STARTUP] Checking OPENAI_API_KEY from .env...", flush=True)
-    openai_api_key = os.getenv("OPENAI_API_KEY")
-    if not openai_api_key:
-        print("❌ [STARTUP] OPENAI_API_KEY not found in .env file!", flush=True)
-        return None
-    print(f"✅ [STARTUP] API key found (ends with: ...{openai_api_key[-6:]})", flush=True)
-    
-    print(f"🧠 [STARTUP] Loading OpenAI embedding model: {OPENAI_EMBEDDING_MODEL}", flush=True)
-    embeddings = OpenAIEmbeddings(model=OPENAI_EMBEDDING_MODEL, openai_api_key=openai_api_key)
-    print("✅ [STARTUP] OpenAI embeddings ready.", flush=True)
-
-    # 2. Load ChromaDB (for semantic search)
-    print(f"💾 [STARTUP] Checking ChromaDB at: {CHROMA_PATH}", flush=True)
     if not os.path.exists(CHROMA_PATH):
-        print(f"❌ [STARTUP] ChromaDB not found! Run your training notebook first.", flush=True)
-        return None
-    
-    print("📂 [STARTUP] Loading ChromaDB collection...", flush=True)
-    db = Chroma(persist_directory=CHROMA_PATH, embedding_function=embeddings)
-    chroma_count = db._collection.count()
-    print(f"✅ [STARTUP] ChromaDB loaded — {chroma_count} vectors in collection.", flush=True)
-    
-    print("⚙️  [STARTUP] Configuring ChromaDB semantic retriever (k=6)...", flush=True)
-    chroma_retriever = db.as_retriever(search_kwargs={"k": 6})
-    print("✅ [STARTUP] Semantic retriever ready.", flush=True)
-
-    # 3. Load pre-built BM25 Index from Disk
-    print(f"📁 [STARTUP] Loading BM25 index from: {BM25_PATH}", flush=True)
-    if not os.path.exists(BM25_PATH):
-        print(f"❌ [STARTUP] BM25 index not found! Run your training notebook first.", flush=True)
+        print(f"[ERROR] ChromaDB not found: {CHROMA_PATH}")
         return None
 
-    try:
-        with open(BM25_PATH, "rb") as f:
-            bm25_retriever = pickle.load(f)
-        # Ensure it returns the top 6 matches just like your semantic retriever
-        bm25_retriever.k = 6
-        print("✅ [STARTUP] BM25 index loaded from disk.", flush=True)
-    except Exception as e:
-        print(f"❌ [STARTUP] Failed to load BM25 index: {e}", flush=True)
-        return None
-
-    # 4. Initialize Retrievers
-    print("⚙️  [STARTUP] Building EnsembleRetriever (BM25: 0.5, Semantic: 0.5)...", flush=True)
-    ensemble_retriever = EnsembleRetriever(
-        retrievers=[bm25_retriever, chroma_retriever],
-        weights=[0.5, 0.5] 
+    embeddings = OpenAIEmbeddings(
+        model=OPENAI_EMBEDDING_MODEL,
+        openai_api_key=api_key
     )
-    print("✅ [STARTUP] Hybrid Retrieval System ONLINE — ready for queries.", flush=True)
-    return ensemble_retriever
 
-# --- 4. QUERY EXPANSION ---
-# Maps common abbreviations/aliases to their full forms so BM25 doesn't
-# misfire on ambiguous short tokens (e.g. "aids" matching MBA/Mechanical sections)
-ABBREVIATION_MAP = {
-    r'\baids\b':       'AI&DS Artificial Intelligence Data Science',
-    r'\bids\b':        'AI&DS Artificial Intelligence Data Science',
-    r'\bai\s*&?\s*ds\b': 'AI&DS Artificial Intelligence Data Science',
-    r'\bcse\b':        'CSE Computer Science Engineering',
-    r'\bai\s*&?\s*ml\b': 'CSE AIML Artificial Intelligence Machine Learning',
-    r'\baiml\b':       'CSE AIML Artificial Intelligence Machine Learning',
-    r'\biot\b':        'CSE IOT Internet of Things',
-    r'\bcs\b':         'CSE Cyber Security',
-    r'\bece\b':        'ECE Electronics Communication Engineering',
-    r'\beee\b':        'EEE Electrical Electronics Engineering',
-    r'\bcivil\b':      'Civil Engineering',
-    r'\bmech\b':       'Mechanical Engineering',
-    r'\bmba\b':        'MBA Business Administration ICET',
-    r'\bmtech\b':      'M.Tech Postgraduate GATE PGECET',
-    r'\beamcet\b':     'AP EAPCET EAMCET',
-    r'\becet\b':       'AP ECET Lateral Entry Diploma',
-    r'\bicet\b':       'AP ICET MBA',
-    r'\beapcet\b':     'AP EAPCET EAMCET',
-    # Cutoff-related synonyms (students say "marks" but data says "ranks")
-    r'\bcut\s*-?\s*off\s+marks?\b': 'cutoff ranks closing rank last rank EAPCET',
-    r'\bcutoff\s+marks?\b':         'cutoff ranks closing rank last rank EAPCET',
-    r'\bclosing\s+marks?\b':        'closing rank last rank cutoff',
-    # Category synonyms
-    r'\bgeneral\s+category\b':      'OC open category',
-    r'\bgeneral\b':                 'OC open category',
-    r'\bopen\s+category\b':         'OC open category',
-}
+    db = Chroma(
+        persist_directory=CHROMA_PATH,
+        embedding_function=embeddings
+    )
 
-import re as _re
+    chroma_retriever = db.as_retriever(search_kwargs={"k": RETRIEVER_K})
 
-def expand_query(query: str) -> str:
-    """Expand known abbreviations to full forms before retrieval."""
-    expanded = query.lower()
-    for pattern, replacement in ABBREVIATION_MAP.items():
-        expanded = _re.sub(pattern, replacement, expanded, flags=_re.IGNORECASE)
-    if expanded != query.lower():
-        print(f"🔄 [QUERY] Expanded: '{query}' → '{expanded}'", flush=True)
-    return expanded
+    print(f"[STARTUP] ChromaDB loaded with {db._collection.count()} vectors")
+    print("[STARTUP] Retriever ready")
 
-# --- 5. FASTAPI APP SETUP ---
-app = FastAPI()
+    return chroma_retriever
+
+
+# =========================================================
+# KEYWORD FILTER
+# =========================================================
+
+def has_keyword_overlap(query: str, content: str):
+
+    query_words = set(re.findall(r"\w+", query.lower()))
+
+    if not query_words:
+        return True
+
+    content_lower = content.lower()
+
+    for word in query_words:
+        stem = word[:4] if len(word) >= 4 else word
+        if stem in content_lower:
+            return True
+
+    return False
+
+
+# =========================================================
+# SEARCH FUNCTION
+# =========================================================
+
+def search_db(query: str):
+
+    retriever = get_retriever()
+
+    if not retriever:
+        return []
+
+    start = time.time()
+    results = retriever.invoke(query)
+    latency = round(time.time() - start, 2)
+
+    print(f"\n{'='*70}")
+    print(f"SEARCH QUERY: {query}")
+    print(f"Latency: {latency}s | Raw chunks: {len(results)}")
+    print(f"{'='*70}")
+
+    seen = set()
+    final = []
+    skipped = 0
+    sources_used = set()
+
+    for doc in results:
+
+        if doc.page_content in seen:
+            continue
+
+        seen.add(doc.page_content)
+
+        source = os.path.basename(doc.metadata.get("source", "Unknown"))
+        doc_name = doc.metadata.get("DocName", "")
+        section = doc.metadata.get("Section", "")
+        subsection = doc.metadata.get("SubSection", "")
+
+        if not has_keyword_overlap(query, doc.page_content):
+            print(f"  [SKIPPED] {source} | {section}")
+            skipped += 1
+            continue
+
+        final.append(doc.page_content)
+        sources_used.add(source)
+
+        preview = doc.page_content[:180].replace("\n", " ")
+
+        print(f"\n  [CHUNK {len(final)}]")
+        print(f"    Source:     {source}")
+        if doc_name:
+            print(f"    Document:   {doc_name}")
+        if section:
+            print(f"    Section:    {section}")
+        if subsection:
+            print(f"    SubSection: {subsection}")
+        print(f"    Preview:    {preview}...")
+
+    print(f"\n{'─'*70}")
+    print(f"Chunks: {len(final)} used | {skipped} filtered")
+    print(f"Sources: {', '.join(sources_used) if sources_used else 'none'}")
+    print(f"{'='*70}\n")
+
+    return final
+
+
+# =========================================================
+# FASTAPI LIFESPAN
+# =========================================================
+
+@asynccontextmanager
+async def lifespan(app):
+
+    await asyncio.to_thread(get_retriever)
+
+    print("[SERVER] Startup complete")
+
+    yield
+
+    print("[SERVER] Shutdown")
+
+
+# =========================================================
+# FASTAPI APP
+# =========================================================
+
+app = FastAPI(lifespan=lifespan)
 
 app.add_middleware(
     CORSMiddleware,
@@ -154,167 +199,48 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+
+# =========================================================
+# REQUEST MODEL
+# =========================================================
+
 class QueryRequest(BaseModel):
     query: str
 
+
+# =========================================================
+# HEALTH CHECK
+# =========================================================
+
 @app.get("/")
-def health_check():
-    return {"status": "Database API Online", "type": "Hybrid RAG"}
+def health():
+    return {"status": "online"}
 
-@app.on_event("startup")
-async def startup_event():
-    """Pre-warm the retriever in a background thread so the server starts instantly."""
-    import asyncio
 
-    def _warmup():
-        print("🔥 [BOOT] Pre-warming retrieval system (background)...", flush=True)
-        r = get_retriever()
-        if r:
-            try:
-                r.retrievers[1].vectorstore.similarity_search("warmup", k=1)
-                print("🔌 [BOOT] OpenAI embedding connection established.", flush=True)
-            except Exception as e:
-                print(f"⚠️  [BOOT] Warmup ping failed (non-critical): {e}", flush=True)
-        print("🚀 [BOOT] Retrieval system fully ready.", flush=True)
-
-    # Run heavy initialization in a thread so the server accepts requests immediately
-    loop = asyncio.get_event_loop()
-    loop.run_in_executor(None, _warmup)
-    print("⚡ [BOOT] Server is UP — retriever warming up in background...", flush=True)
-
-@app.post("/debug")
-def debug_search(request: QueryRequest):
-    """Debug endpoint: tests BM25 and semantic search independently."""
-    q = request.query
-    print(f"\n{'#'*60}", flush=True)
-    print(f"🛠️  [DEBUG] Query: '{q}'", flush=True)
-    print(f"{'#'*60}", flush=True)
-
-    retriever = get_retriever()
-    if not retriever:
-        return {"error": "Retriever not available"}
-
-    bm25_r   = retriever.retrievers[0]   # BM25
-    chroma_r = retriever.retrievers[1]   # Semantic
-
-    # --- BM25 alone ---
-    print("\n🔤 [DEBUG] BM25 results (keyword-only):", flush=True)
-    bm25_docs = bm25_r.invoke(q)
-    bm25_out = []
-    for i, d in enumerate(bm25_docs[:6]):
-        src = os.path.basename(d.metadata.get("source", "?"))
-        snip = d.page_content[:100].replace("\n", " ")
-        print(f"   BM25[{i+1}] {src} → {snip}", flush=True)
-        bm25_out.append({"source": src, "snippet": snip})
-
-    # --- Semantic alone ---
-    print("\n🧠 [DEBUG] Semantic results (chromadb-only):", flush=True)
-    semantic_docs = chroma_r.invoke(q)
-    semantic_out = []
-    for i, d in enumerate(semantic_docs[:6]):
-        src = os.path.basename(d.metadata.get("source", "?"))
-        snip = d.page_content[:100].replace("\n", " ")
-        print(f"   SEM[{i+1}] {src} → {snip}", flush=True)
-        semantic_out.append({"source": src, "snippet": snip})
-
-    # --- Ensemble ---
-    print("\n🔀 [DEBUG] Ensemble (fused) results:", flush=True)
-    ensemble_docs = retriever.invoke(q)
-    ensemble_out = []
-    seen = set()
-    for i, d in enumerate(ensemble_docs):
-        if d.page_content in seen: continue
-        seen.add(d.page_content)
-        src = os.path.basename(d.metadata.get("source", "?"))
-        snip = d.page_content[:100].replace("\n", " ")
-        print(f"   ENS[{len(ensemble_out)+1}] {src} → {snip}", flush=True)
-        ensemble_out.append({"source": src, "snippet": snip})
-        if len(ensemble_out) >= 6: break
-
-    return {"bm25": bm25_out, "semantic": semantic_out, "ensemble": ensemble_out}
-
-@app.post("/transcribe")
-async def transcribe_audio(file: UploadFile = FastAPIFile(...)):
-    """
-    Transcribe audio file using Sarvam STT API.
-    """
-    import aiohttp
-    from fastapi import UploadFile, File
-    
-    api_key = os.getenv("SARVAM_API_KEY")
-    if not api_key:
-        return {"error": "SARVAM_API_KEY not set"}
-    
-    # Read audio file
-    audio_content = await file.read()
-    
-    # Prepare form data
-    data = aiohttp.FormData()
-    data.add_field('file', audio_content, filename=file.filename, content_type=file.content_type)
-    data.add_field('model', 'saarika:v2.5')
-    # Auto-detect language or specify Telugu
-    # data.add_field('language_code', 'te-IN') # Optional: force Telugu
-    
-    url = "https://api.sarvam.ai/speech-to-text"
-    
-    async with aiohttp.ClientSession() as session:
-        headers = {'Authorization': f'Bearer {api_key}'}
-        try:
-            async with session.post(url, data=data, headers=headers) as response:
-                if response.status == 200:
-                    result = await response.json()
-                    # Sarvam response format: {"transcript": "...", "language_code": "..."}
-                    transcript = result.get('transcript', '')
-                    return {"transcript": transcript}
-                else:
-                    error_text = await response.text()
-                    print(f"❌ Sarvam API Error: {response.status} - {error_text}")
-                    return {"error": f"STT API failed: {response.status}"}
-        except Exception as e:
-            print(f"❌ Exception calling Sarvam API: {e}")
-            return {"error": str(e)}
+# =========================================================
+# SEARCH API
+# =========================================================
 
 @app.post("/search")
-def search_database_only(request: QueryRequest):
-    import time
-    print("\n" + "="*60, flush=True)
-    print(f"📥 [QUERY] Received: '{request.query}'", flush=True)
-    print("="*60, flush=True)
-    
-    retriever = get_retriever()
-    if not retriever:
-        print("❌ [QUERY] Retriever unavailable — aborting.", flush=True)
-        return {"results": ["Error: Database unavailable. Check server logs."]}
-    
-    # Perform Hybrid Search
-    print(f"🔎 [QUERY] Running hybrid search (BM25 + Semantic)...", flush=True)
-    t0 = time.time()
-    results = retriever.invoke(request.query)
-    elapsed = round(time.time() - t0, 2)
-    print(f"⏱️  [QUERY] Search completed in {elapsed}s — got {len(results)} raw results.", flush=True)
-    
-    # Dedup and format
-    seen_content = set()
-    final_output = []
-    
-    print(f"📋 [QUERY] Deduplicating and selecting top 6...", flush=True)
-    for i, doc in enumerate(results):
-        source = doc.metadata.get('source', 'Unknown')
-        snippet = doc.page_content[:120].replace('\n', ' ')
-        print(f"   [{i+1}] source={os.path.basename(source)} | snippet: {snippet}...", flush=True)
-        
-        if doc.page_content not in seen_content:
-            final_output.append(doc.page_content)
-            seen_content.add(doc.page_content)
-            
-        if len(final_output) >= 6:
-            break
-    
-    print(f"✅ [QUERY] Returning {len(final_output)} unique results to client.", flush=True)
-    return {"results": final_output}
+def search(request: QueryRequest):
 
-# --- 5. SERVER EXECUTION ---
+    results = search_db(request.query)
+
+    return {
+        "query": request.query,
+        "chunks": len(results),
+        "results": results
+    }
+
+
+# =========================================================
+# RUN SERVER
+# =========================================================
+
 if __name__ == "__main__":
+
     port = int(os.environ.get("PORT", 8000))
-    print(f"🚀 Starting Server on Port {port}...")
+
+    print(f"[SERVER] Starting on port {port}")
+
     uvicorn.run("main:app", host="0.0.0.0", port=port, reload=True)

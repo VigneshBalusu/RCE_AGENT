@@ -5,15 +5,26 @@ import re
 import uvicorn
 import asyncio
 from contextlib import asynccontextmanager
+from difflib import SequenceMatcher
 from dotenv import load_dotenv
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
+from fastapi import UploadFile, File, Form
+from fastapi.responses import Response
+from voice_handler import process_voice, end_session, warmup, is_ready
 
 from langchain_openai import OpenAIEmbeddings
 from langchain_chroma import Chroma
 
+from chat_engine import (
+    analyze_query, 
+    generate_casual_answer, 
+    generate_web_answer, 
+    generate_db_answer, 
+    update_memory
+)
 
 # =========================================================
 # ENV
@@ -25,6 +36,7 @@ load_dotenv(os.path.join(BASE_DIR, ".env"))
 OPENAI_EMBEDDING_MODEL = "text-embedding-3-small"
 RETRIEVER_K = 12
 CHROMA_PATH = os.path.join(BASE_DIR, "chroma_db")
+FUZZY_THRESHOLD = 0.75
 
 
 # =========================================================
@@ -37,6 +49,37 @@ try:
     print("[STARTUP] Using pysqlite3 (cloud mode)")
 except ImportError:
     print("[STARTUP] Using default sqlite3 (local mode)")
+
+
+# =========================================================
+# ALIAS MAP (abbreviation <-> full form)
+# =========================================================
+
+ALIAS_MAP = {
+    "cse":    ["cse", "computer science", "computer science engineering"],
+    "ece":    ["ece", "electronics", "electronics communication", "electronics communication engineering"],
+    "eee":    ["eee", "electrical", "electrical electronics", "electrical electronics engineering"],
+    "aids":   ["aids", "ai&ds", "ai ds", "artificial intelligence", "artificial intelligence data science"],
+    "aiml":   ["aiml", "ai&ml", "ai ml", "artificial intelligence machine learning"],
+    "iot":    ["iot", "internet of things"],
+    "cs":     ["cs", "cyber security"],
+    "mba":    ["mba", "business administration", "management studies"],
+    "mtech":  ["mtech", "m.tech", "postgraduate"],
+    "civil":  ["civil", "civil engineering"],
+    "mech":   ["mech", "mechanical", "mechanical engineering"],
+    "hod":    ["hod", "head of department", "department head"],
+    "eapcet": ["eapcet", "eamcet", "ap eapcet", "ap eamcet"],
+    "ecet":   ["ecet", "ap ecet", "lateral entry"],
+    "icet":   ["icet", "ap icet"],
+    "pgecet": ["pgecet", "pg ecet"],
+    "nba":    ["nba", "accreditation"],
+    "naac":   ["naac", "accreditation"],
+    "nss":    ["nss", "national service scheme"],
+    "sih":    ["sih", "smart india hackathon"],
+    "rcee":   ["rcee", "rce", "ramachandra", "ramachandra college"],
+    "ao":     ["ao", "administrative officer"],
+    "md":     ["md", "managing director"],
+}
 
 
 # =========================================================
@@ -84,24 +127,93 @@ def get_retriever():
 
 
 # =========================================================
-# KEYWORD FILTER
+# SMART KEYWORD FILTER
 # =========================================================
 
-def has_keyword_overlap(query: str, content: str):
+def get_aliases(word: str) -> list:
+    word_lower = word.lower()
 
-    query_words = set(re.findall(r"\w+", query.lower()))
+    if word_lower in ALIAS_MAP:
+        return ALIAS_MAP[word_lower]
 
-    if not query_words:
+    for _, aliases in ALIAS_MAP.items():
+        if word_lower in aliases:
+            return aliases
+
+    return [word_lower]
+
+
+def word_matches_content(word: str, content_lower: str, content_words: set) -> bool:
+
+    # Exact token match
+    if word in content_words:
         return True
 
-    content_lower = content.lower()
+    # Direct substring match
+    if word in content_lower:
+        return True
 
-    for word in query_words:
-        stem = word[:4] if len(word) >= 4 else word
-        if stem in content_lower:
-            return True
+    # Substring either direction
+    for cw in content_words:
+        if len(cw) >= 4 and len(word) >= 4:
+            if cw in word or word in cw:
+                return True
+
+    # Fuzzy match
+    if len(word) >= 4:
+        for cw in content_words:
+            if len(cw) >= 4:
+                if SequenceMatcher(None, word, cw).ratio() >= FUZZY_THRESHOLD:
+                    return True
+
+    # Stem fallback
+    if len(word) >= 4 and word[:4] in content_lower:
+        return True
 
     return False
+
+
+def has_keyword_overlap(query: str, content: str) -> tuple:
+    """
+    Keep chunk if ANY query keyword matches content.
+    Returns:
+    (keep: bool, matched_count: int, total_words: int, matched_words: list)
+    """
+
+    query_words = re.findall(r"\w+", query.lower())
+
+    if not query_words:
+        return True, 0, 0, []
+
+    content_lower = content.lower()
+    content_words = set(re.findall(r"\w+", content_lower))
+
+    matched_words = []
+
+    for qword in query_words:
+        aliases = get_aliases(qword)
+        word_matched = False
+
+        for alias in aliases:
+            if " " in alias:
+                if alias in content_lower:
+                    word_matched = True
+                    break
+            else:
+                if word_matches_content(alias, content_lower, content_words):
+                    word_matched = True
+                    break
+
+        if word_matched:
+            matched_words.append(qword)
+
+    matched = len(matched_words)
+    total = len(query_words)
+
+    # For your chunked DB: 1 match is enough
+    keep = matched >= 1
+
+    return keep, matched, total, matched_words
 
 
 # =========================================================
@@ -141,8 +253,10 @@ def search_db(query: str):
         section = doc.metadata.get("Section", "")
         subsection = doc.metadata.get("SubSection", "")
 
-        if not has_keyword_overlap(query, doc.page_content):
-            print(f"  [SKIPPED] {source} | {section}")
+        keep, matched, total, matched_words = has_keyword_overlap(query, doc.page_content)
+
+        if not keep:
+            print(f"  [SKIPPED] {source} | {section} | matched {matched}/{total}: {matched_words}")
             skipped += 1
             continue
 
@@ -151,7 +265,7 @@ def search_db(query: str):
 
         preview = doc.page_content[:180].replace("\n", " ")
 
-        print(f"\n  [CHUNK {len(final)}]")
+        print(f"\n  [CHUNK {len(final)}] matched {matched}/{total}: {matched_words}")
         print(f"    Source:     {source}")
         if doc_name:
             print(f"    Document:   {doc_name}")
@@ -176,7 +290,13 @@ def search_db(query: str):
 @asynccontextmanager
 async def lifespan(app):
 
+    # Warmup retriever
     await asyncio.to_thread(get_retriever)
+    print("[SERVER] Retriever ready")
+
+    # Warmup voice handler
+    await asyncio.to_thread(warmup)
+    print("[SERVER] Voice handler ready")
 
     print("[SERVER] Startup complete")
 
@@ -206,6 +326,7 @@ app.add_middleware(
 
 class QueryRequest(BaseModel):
     query: str
+    session_id: str
 
 
 # =========================================================
@@ -231,8 +352,87 @@ def search(request: QueryRequest):
         "chunks": len(results),
         "results": results
     }
+# =========================================================
+# VOICE CALL API
+# =========================================================
+@app.get("/voice-call/status")
+def voice_call_status():
+    return {"ready": is_ready()}
 
+@app.post("/voice-call")
+async def voice_call(file: UploadFile = File(...), session_id: str = Form(...)): # <-- Catch the ID here!
+    print(f"\n{'='*70}")
+    print(f"[CALL] Received audio for Session: {session_id}")
+    print(f"{'='*70}")
+    
+    audio_bytes = await file.read()
+    print(f"[CALL] Size: {len(audio_bytes)} bytes")
+    
+    # Pass the session_id into your process_voice function!
+    response_audio = await process_voice(audio_bytes, search_db, session_id)
+    
+    print(f"[CALL] Response audio: {len(response_audio)} bytes")
+    print(f"{'='*70}\n")
+    return Response(content=response_audio, media_type="audio/wav")
 
+@app.post("/voice-call/end")
+def voice_call_end(request: QueryRequest): # Use your existing QueryRequest model
+    # Now this can actually end the specific user's call
+    end_session(request.session_id) 
+    return {"status": "ended"}
+# =========================================================
+# THE NEW CHAT API (WITH MEMORY & ROUTING)
+# =========================================================
+@app.post("/api/chat")
+async def chat_endpoint(request: QueryRequest):
+    session_id = request.session_id
+    raw_query = request.query
+    
+    print(f"\n{'='*70}")
+    print(f"[CHAT] Session: {session_id}")
+    print(f"[CHAT] Raw Query: {raw_query}")
+    
+    # 1. Save user query to memory
+    update_memory(session_id, "user", raw_query)
+    
+    # 2. Analyze the query to get Keywords and Route
+    analysis = await analyze_query(raw_query, session_id)
+    
+    # BUGFIX: Force route to lowercase and strip hidden spaces 
+    route = str(analysis.get("route", "db")).strip().lower()
+    keywords = analysis.get("keywords", raw_query)
+    
+    print(f"[CHAT] Route Decided: {route.upper()}")
+    if route == "db":
+        print(f"[CHAT] DB Keywords: {keywords}")
+    print(f"{'='*70}\n")
+    
+    # BUGFIX: Initialize a failsafe answer so it never crashes
+    final_answer = "I encountered a routing error. Please ask that again."
+    
+    # 3. Route to the correct generator
+    try:
+        if route == "casual":
+            final_answer = await generate_casual_answer(raw_query, session_id)
+            
+        elif route == "web":
+            final_answer = await generate_web_answer(raw_query, session_id)
+            
+        else: 
+            # Catch-all Default (forces DB search)
+            route = "db" 
+            chunks = search_db(keywords) 
+            final_answer = await generate_db_answer(raw_query, chunks, session_id)
+            
+    except Exception as e:
+        print(f"[GENERATOR ERROR] {e}")
+        final_answer = "I'm sorry, I couldn't fetch that information right now."
+    
+    # 4. Save bot answer to memory WITH THE ROUTE
+    update_memory(session_id, "assistant", final_answer, route)
+    
+    # Return exactly what n8n needs
+    return {"answer": final_answer}
 # =========================================================
 # RUN SERVER
 # =========================================================

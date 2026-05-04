@@ -11,20 +11,14 @@ from dotenv import load_dotenv
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
-from fastapi import UploadFile, File, Form
+from fastapi import UploadFile, File
 from fastapi.responses import Response
 from voice_handler import process_voice, end_session, warmup, is_ready
 
 from langchain_openai import OpenAIEmbeddings
 from langchain_chroma import Chroma
 
-from chat_engine import (
-    analyze_query, 
-    generate_casual_answer, 
-    generate_web_answer, 
-    generate_db_answer, 
-    update_memory
-)
+
 
 # =========================================================
 # ENV
@@ -326,7 +320,6 @@ app.add_middleware(
 
 class QueryRequest(BaseModel):
     query: str
-    session_id: str
 
 
 # =========================================================
@@ -360,79 +353,27 @@ def voice_call_status():
     return {"ready": is_ready()}
 
 @app.post("/voice-call")
-async def voice_call(file: UploadFile = File(...), session_id: str = Form(...)): # <-- Catch the ID here!
+async def voice_call(file: UploadFile = File(...)):
     print(f"\n{'='*70}")
-    print(f"[CALL] Received audio for Session: {session_id}")
+    print(f"[CALL] Received audio")
     print(f"{'='*70}")
     
     audio_bytes = await file.read()
     print(f"[CALL] Size: {len(audio_bytes)} bytes")
     
-    # Pass the session_id into your process_voice function!
-    response_audio = await process_voice(audio_bytes, search_db, session_id)
+    response_audio = await process_voice(audio_bytes, search_db)
     
     print(f"[CALL] Response audio: {len(response_audio)} bytes")
     print(f"{'='*70}\n")
     return Response(content=response_audio, media_type="audio/wav")
 
+class EndCallRequest(BaseModel):
+    session_id: str
+
 @app.post("/voice-call/end")
-def voice_call_end(request: QueryRequest): # Use your existing QueryRequest model
-    # Now this can actually end the specific user's call
+def voice_call_end(request: EndCallRequest):
     end_session(request.session_id) 
     return {"status": "ended"}
-# =========================================================
-# THE NEW CHAT API (WITH MEMORY & ROUTING)
-# =========================================================
-@app.post("/api/chat")
-async def chat_endpoint(request: QueryRequest):
-    session_id = request.session_id
-    raw_query = request.query
-    
-    print(f"\n{'='*70}")
-    print(f"[CHAT] Session: {session_id}")
-    print(f"[CHAT] Raw Query: {raw_query}")
-    
-    # 1. Save user query to memory
-    update_memory(session_id, "user", raw_query)
-    
-    # 2. Analyze the query to get Keywords and Route
-    analysis = await analyze_query(raw_query, session_id)
-    
-    # BUGFIX: Force route to lowercase and strip hidden spaces 
-    route = str(analysis.get("route", "db")).strip().lower()
-    keywords = analysis.get("keywords", raw_query)
-    
-    print(f"[CHAT] Route Decided: {route.upper()}")
-    if route == "db":
-        print(f"[CHAT] DB Keywords: {keywords}")
-    print(f"{'='*70}\n")
-    
-    # BUGFIX: Initialize a failsafe answer so it never crashes
-    final_answer = "I encountered a routing error. Please ask that again."
-    
-    # 3. Route to the correct generator
-    try:
-        if route == "casual":
-            final_answer = await generate_casual_answer(raw_query, session_id)
-            
-        elif route == "web":
-            final_answer = await generate_web_answer(raw_query, session_id)
-            
-        else: 
-            # Catch-all Default (forces DB search)
-            route = "db" 
-            chunks = search_db(keywords) 
-            final_answer = await generate_db_answer(raw_query, chunks, session_id)
-            
-    except Exception as e:
-        print(f"[GENERATOR ERROR] {e}")
-        final_answer = "I'm sorry, I couldn't fetch that information right now."
-    
-    # 4. Save bot answer to memory WITH THE ROUTE
-    update_memory(session_id, "assistant", final_answer, route)
-    
-    # Return exactly what n8n needs
-    return {"answer": final_answer}
 # =========================================================
 # RUN SERVER
 # =========================================================

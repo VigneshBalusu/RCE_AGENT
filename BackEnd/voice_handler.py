@@ -11,8 +11,6 @@ from openai import OpenAI
 # CONFIG
 # =========================================================
 LLM_MODEL            = "gpt-4o-mini"
-LLM_REASONING_MODEL  = "gpt-4"  # For query generation with enhanced thinking
-MAX_MEMORY           = 5
 SARVAM_STT_HTTP_URL  = "https://api.sarvam.ai/speech-to-text"
 SARVAM_TTS_URL       = "wss://api.sarvam.ai/text-to-speech/ws"
 SARVAM_TRANSLATE_URL = "https://api.sarvam.ai/translate"
@@ -28,104 +26,6 @@ CASUAL_WORDS = {
     "okay", "ok", "good", "fine", "welcome", "great", "cool",
     "nice", "sure", "yes", "no", "alright", "right"
 }
-
-# =========================================================
-# CONTEXT-AWARE ANSWER CHECKING
-# =========================================================
-async def check_answer_in_context(user_query: str, mem: list) -> tuple:
-    """
-    Check if the user's question can be answered using previous context.
-    Returns (found: bool, answer: str)
-    
-    Examples:
-    - Memory: "Principal: Dr. K. Subba Rao, email principal@rcee.ac.in"
-    - Query: "Who is the principal?" → (True, "Dr. K. Subba Rao is the principal...")
-    
-    - Memory: "CSE HOD: Dr G Chamundeswari, phone 94929,36222"
-    - Query: "What is his contact number?" → (True, "You can reach him at 94929,36222")
-    """
-
-    if not mem:
-        return (False, "")
-
-    context_text = "\n".join(mem)
-
-    client = get_openai()
-    
-    prompt = f"""You are a context-matching expert. Given previous conversation context and a new question,
-determine if the answer is ALREADY in the context.
-
-PREVIOUS CONTEXT:
-{context_text}
-
-NEW QUESTION: {user_query}
-
-RULES:
-1. If the context HAS the answer → Respond ONLY with: ANSWER: [the answer in natural speech format]
-2. If context is PARTIALLY related but no exact answer → Respond: PARTIAL
-3. If NO direct relationship → Respond: NOT_FOUND
-
-Examples:
-- Context: "Principal: Dr. K. Subba Rao, email principal@rcee.ac.in"
-  Question: "Who is the principal?"
-  Response: ANSWER: The principal is Dr. K. Subba Rao. You can contact him at principal@rcee.ac.in
-
-- Context: "CSE HOD: Dr G Chamundeswari, phone 94929,36222"
-  Question: "What about him?" (him = CSE HOD from context)
-  Response: ANSWER: Dr G Chamundeswari is the HOD of CSE department. You can reach him at 94929,36222
-
-RESPOND ONLY with one line: ANSWER: [answer], PARTIAL, or NOT_FOUND"""
-
-    try:
-        response = client.chat.completions.create(
-            model=LLM_REASONING_MODEL,
-            messages=[
-                {"role": "system", "content": "You are a context matcher. Respond with only ANSWER:[...], PARTIAL, or NOT_FOUND"},
-                {"role": "user", "content": prompt}
-            ],
-            temperature=0,
-            max_tokens=300
-        )
-        
-        result = response.choices[0].message.content.strip()
-        print(f"[CONTEXT_CHECK] Question: '{user_query[:50]}'...", flush=True)
-        print(f"[CONTEXT_CHECK] Result: {result[:80]}...", flush=True)
-        
-        if result.startswith("ANSWER:"):
-            answer = result.replace("ANSWER:", "").strip()
-            return (True, answer)
-        
-        return (False, "")
-    
-    except Exception as e:
-        print(f"[CONTEXT_CHECK] Error: {e}", flush=True)
-        return (False, "")
-
-# =========================================================
-# SESSION MEMORY (per user)
-# =========================================================
-sessions = {}
-
-def get_memory(session_id: str) -> list:
-    if session_id not in sessions:
-        sessions[session_id] = []
-    return sessions[session_id]
-
-# =========================================================
-# CANCELLED SESSIONS TRACKING
-# =========================================================
-cancelled_sessions = set()
-
-def cancel_session(session_id: str):
-    """Mark a session as cancelled so in-flight processing stops."""
-    cancelled_sessions.add(session_id)
-    print(f"[CANCEL] Session {session_id} marked for cancellation", flush=True)
-
-def is_session_cancelled(session_id: str) -> bool:
-    return session_id in cancelled_sessions
-
-def clear_cancellation(session_id: str):
-    cancelled_sessions.discard(session_id)
 
 # =========================================================
 # OPENAI CLIENT
@@ -183,7 +83,9 @@ async def stt(audio_bytes: bytes) -> dict:
 
     try:
         async with aiohttp.ClientSession() as session:
-            async with session.post(SARVAM_STT_HTTP_URL, data=data, headers=headers) as response:
+            async with session.post(
+                SARVAM_STT_HTTP_URL, data=data, headers=headers
+            ) as response:
 
                 if response.status != 200:
                     error_text = await response.text()
@@ -192,10 +94,10 @@ async def stt(audio_bytes: bytes) -> dict:
 
                 result = await response.json()
                 transcript = result.get("transcript", "").strip()
-                language = result.get("language_code", "") or detect_language(transcript)
+                language   = result.get("language_code", "") or detect_language(transcript)
 
                 print(f"[STT] Transcript: '{transcript}'", flush=True)
-                print(f"[STT] Language: {language}", flush=True)
+                print(f"[STT] Language  : {language}", flush=True)
 
                 return {"transcript": transcript, "language": language}
 
@@ -211,24 +113,19 @@ def humanize_text(text: str, language: str = "en-IN") -> str:
 
     # For non-English languages, handle differently
     if language != "en-IN":
-        # Only clean up extra spaces and markdown, preserve script-specific characters
-        text = re.sub(r'\[([^\]]+)\]\([^)]+\)', r'\1', text)  # Remove markdown links
-        text = re.sub(r'[*_#`]', '', text)  # Remove markdown formatting
-        text = re.sub(r'\s+', ' ', text).strip()  # Clean extra spaces
+        text = re.sub(r'\[([^\]]+)\]\([^)]+\)', r'\1', text)
+        text = re.sub(r'[*_#`]', '', text)
+        text = re.sub(r'\s+', ' ', text).strip()
         return text
 
     # ── ENGLISH-ONLY PREPROCESSING ──
-    # Remove any leftover markdown/formatting
     text = re.sub(r'[*_#`]', '', text)
     text = re.sub(r'\[([^\]]+)\]\([^)]+\)', r'\1', text)
 
     # ── Step 1: Protect phone numbers FIRST ──
-    # Find phone numbers (7-12 digit sequences, with optional spaces/dashes)
-    # and convert them to digit-by-digit with spaces
     def phone_to_digits(match):
         digits = re.sub(r'[^0-9]', '', match.group())
         if 7 <= len(digits) <= 12:
-            # Group as: XXXXX XXXXX or XXX XXXX XXXX
             if len(digits) == 10:
                 return f"{digits[:5]}, {digits[5:]}"
             elif len(digits) == 11:
@@ -236,67 +133,58 @@ def humanize_text(text: str, language: str = "en-IN") -> str:
             elif len(digits) == 12:
                 return f"{digits[:2]}, {digits[2:7]}, {digits[7:]}"
             else:
-                # Generic grouping
-                spaced = ' '.join(digits)
-                return spaced
+                return ' '.join(digits)
         return match.group()
 
-    # Match phone number patterns: +91-XXXXX-XXXXX, 9492936222, 94929 36222, etc.
     text = re.sub(r'\+?91[-\s]?\d{5}[-\s,]?\d{5}', phone_to_digits, text)
     text = re.sub(r'\b\d{10}\b', phone_to_digits, text)
     text = re.sub(r'\b\d{5}[-\s,]\s?\d{5}\b', phone_to_digits, text)
-
-    # Remove leftover +91 prefixes
     text = text.replace("+91-", "").replace("+91 ", "").replace("+91", "")
 
-    # ── Step 2: Abbreviation expansion (only for English) ──
-    if language == "en-IN":
-        replacements = {
-            "Dr.": "Doctor",
-            "Prof.": "Professor",
-            "HOD": "H O D",
-            "CSE": "C S E",
-            "ECE": "E C E",
-            "EEE": "E E E",
-            "AI&DS": "A I and D S",
-            "AIML": "A I M L",
-            "IOT": "I O T",
-            "MBA": "M B A",
-            "M.Tech": "M Tech",
-            "B.Tech": "B Tech",
-            "BTech": "B Tech",
-            "MTech": "M Tech",
-            "RCEE": "R C E E",
-            "RCE": "R C E",
-            "NBA": "N B A",
-            "NAAC": "N A A C",
-            "EAMCET": "E A M C E T",
-            "EAPCET": "E A P C E T",
-            "ECET": "E C E T",
-            "ICET": "I C E T",
-            "PGECET": "P G E C E T",
-            "GATE": "gate",
-            "IEEE": "I triple E",
-            "ISTE": "I S T E",
-            "Rs.": "Rupees",
-            "Rs": "Rupees",
-            "₹": "Rupees",
-            "LPA": "lakhs per annum",
-            "CTC": "C T C",
-            "9AM": "9 A M",
-            "5PM": "5 P M",
-            "9 AM": "9 A M",
-            "5 PM": "5 P M",
-        }
+    # ── Step 2: Abbreviation expansion ──
+    replacements = {
+        "Dr.": "Doctor",
+        "Prof.": "Professor",
+        "HOD": "H O D",
+        "CSE": "C S E",
+        "ECE": "E C E",
+        "EEE": "E E E",
+        "AI&DS": "A I and D S",
+        "AIML": "A I M L",
+        "IOT": "I O T",
+        "MBA": "M B A",
+        "M.Tech": "M Tech",
+        "B.Tech": "B Tech",
+        "BTech": "B Tech",
+        "MTech": "M Tech",
+        "RCEE": "R C E E",
+        "RCE": "R C E",
+        "NBA": "N B A",
+        "NAAC": "N A A C",
+        "EAMCET": "E A M C E T",
+        "EAPCET": "E A P C E T",
+        "ECET": "E C E T",
+        "ICET": "I C E T",
+        "PGECET": "P G E C E T",
+        "GATE": "gate",
+        "IEEE": "I triple E",
+        "ISTE": "I S T E",
+        "Rs.": "Rupees",
+        "Rs": "Rupees",
+        "₹": "Rupees",
+        "LPA": "lakhs per annum",
+        "CTC": "C T C",
+        "9AM": "9 A M",
+        "5PM": "5 P M",
+        "9 AM": "9 A M",
+        "5 PM": "5 P M",
+    }
+    for abbr, spoken in replacements.items():
+        text = text.replace(abbr, spoken)
 
-        for abbr, spoken in replacements.items():
-            text = text.replace(abbr, spoken)
-
-    # ── Step 3: Number conversion (skip phone numbers already handled) ──
-    # Only convert numbers that are NOT already digit-grouped phone numbers
+    # ── Step 3: Number conversion ──
     def speak_number(match):
         raw = match.group()
-        # Skip if it looks like part of a phone number (already handled)
         num = int(raw.replace(",", ""))
         if num >= 100000:
             lakhs = num / 100000
@@ -310,23 +198,16 @@ def humanize_text(text: str, language: str = "en-IN") -> str:
             return f"{thousands:.1f} thousand"
         return raw
 
-    # Only match numbers that are clearly NOT phone numbers
-    # (numbers preceded by ₹, Rs, "fee", "rank", "salary", or standalone large numbers)
     text = re.sub(r'(?<!\d[\s,])\b\d{1,3}(?:,\d{3})+\b', speak_number, text)
     text = re.sub(r'(?<!\d[\s,])\b\d{4,6}\b(?![\s,]\d)', speak_number, text)
 
-    # ── Step 4: Light pause insertion (safe for all languages) ──
-    # Only add a brief pause after sentence-ending periods
-    # Do NOT use "..." — it causes stuttering in Sarvam TTS
-    # Sarvam naturally handles commas and periods as pauses
-
-    # Clean up extra spaces
+    # ── Step 4: Clean up extra spaces ──
     text = re.sub(r'\s+', ' ', text).strip()
 
     return text
 
 # =========================================================
-# SARVAM TTS (text → audio) — ENHANCED for natural speech
+# SARVAM TTS (text → audio)
 # =========================================================
 async def tts(text: str, language: str = "en-IN") -> bytes:
 
@@ -334,7 +215,6 @@ async def tts(text: str, language: str = "en-IN") -> bytes:
     if not api_key:
         return b""
 
-    # Humanize the text before sending to TTS (pass language)
     spoken_text = humanize_text(text, language)
     print(f"[TTS] Original:  '{text[:100]}'", flush=True)
     print(f"[TTS] Humanized: '{spoken_text[:100]}'", flush=True)
@@ -343,7 +223,6 @@ async def tts(text: str, language: str = "en-IN") -> bytes:
     headers = {"Api-Subscription-Key": api_key}
 
     audio_chunks = []
-
     print(f"[TTS] Connecting (lang={language})...", flush=True)
 
     try:
@@ -385,7 +264,10 @@ async def tts(text: str, language: str = "en-IN") -> bytes:
                         break
 
                     elif data.get("type") == "error":
-                        print(f"[TTS] Error: {data.get('data', {}).get('message', 'Unknown')}", flush=True)
+                        print(
+                            f"[TTS] Error: {data.get('data', {}).get('message', 'Unknown')}",
+                            flush=True
+                        )
                         break
 
             except asyncio.TimeoutError:
@@ -416,17 +298,17 @@ async def translate(text: str, source_lang: str, target_lang: str) -> str:
         "target_language_code": target_lang,
         "model": "mayura:v1"
     }
-
     headers = {"Api-Subscription-Key": api_key, "Content-Type": "application/json"}
 
     try:
         async with aiohttp.ClientSession() as session:
-            async with session.post(SARVAM_TRANSLATE_URL, json=payload, headers=headers) as response:
+            async with session.post(
+                SARVAM_TRANSLATE_URL, json=payload, headers=headers
+            ) as response:
 
                 if response.status != 200:
                     error_text = await response.text()
                     print(f"[TRANSLATE] Error {response.status}: {error_text}", flush=True)
-                    print(f"[TRANSLATE] Falling back to original text in {target_lang}", flush=True)
                     return text
 
                 result = await response.json()
@@ -442,35 +324,148 @@ async def translate(text: str, source_lang: str, target_lang: str) -> str:
         return text
 
 # =========================================================
+# CALL CONVERSATION HISTORY (for follow-up context)
+# =========================================================
+# Each entry: {"role": "user"|"assistant", "text": str}
+# We store the ENGLISH version of both user queries and assistant answers
+# so that generate_query() and generate_answer() always work in English.
+# =========================================================
+_call_history: list[dict] = []
+MAX_CALL_HISTORY = 10   # keep last 10 turns (5 user + 5 assistant pairs)
+
+def get_call_history_text() -> str:
+    """Return formatted conversation history (always in English)."""
+    if not _call_history:
+        return ""
+    return "\n".join(
+        f"{'Student' if h['role'] == 'user' else 'Assistant'}: {h['text']}"
+        for h in _call_history[-MAX_CALL_HISTORY:]
+    )
+
+def add_to_call_history(role: str, text: str):
+    """
+    Add a turn to history.
+    ALWAYS store English text here — translations happen only at TTS time.
+    """
+    global _call_history
+    _call_history.append({"role": role, "text": text.strip()})
+    if len(_call_history) > MAX_CALL_HISTORY:
+        _call_history = _call_history[-MAX_CALL_HISTORY:]
+    print(f"[HISTORY] Added ({role}): '{text[:80]}'", flush=True)
+
+def clear_call_history():
+    global _call_history
+    _call_history = []
+    print("[HISTORY] Cleared", flush=True)
+
+# =========================================================
+# CANCELLATION TRACKING
+# =========================================================
+_cancelled = False
+
+def cancel_call():
+    global _cancelled
+    _cancelled = True
+    print("[CANCEL] Call marked for cancellation", flush=True)
+
+def is_call_cancelled() -> bool:
+    return _cancelled
+
+def clear_cancellation():
+    global _cancelled
+    _cancelled = False
+
+class CallCancelled(Exception):
+    """Raised when user ends the call mid-processing."""
+    pass
+
+def _check_cancelled():
+    if is_call_cancelled():
+        print("[CANCELLED] Stopping pipeline", flush=True)
+        raise CallCancelled("Call cancelled by user")
+
+# =========================================================
+# LLM: INTENT DETECTION
+# =========================================================
+def detect_intent(user_text: str, history_text: str) -> str:
+    """
+    Classify the user's intent so we route correctly.
+    Returns one of: CASUAL | WEB_SEARCH | DB_QUERY
+    
+    This runs AFTER we already know the English text, so all
+    context (pronouns, follow-ups) is resolved before routing.
+    """
+    history_block = ""
+    if history_text:
+        history_block = f"""
+CONVERSATION SO FAR:
+{history_text}
+
+The current message may be a follow-up to the above conversation.
+Even if the message is short or uses pronouns, classify based on the FULL context.
+"""
+
+    prompt = f"""You are an intent classifier for a college voice assistant.
+
+{history_block}
+
+CURRENT MESSAGE: "{user_text}"
+
+Classify the intent as exactly ONE of:
+- CASUAL     : greetings, thanks, bye, yes/no, very short social phrases (ignore context for these)
+- WEB_SEARCH : asks about latest news, recent events, current updates, announcements, today's info
+- DB_QUERY   : any question about the college — admissions, fees, courses, faculty, placements,
+               ranks, hostel, bus, contact, eligibility, scholarships, departments, etc.
+               This includes follow-up questions that reference previous topics via pronouns.
+
+RULES:
+1. If the message is a clear greeting/farewell (hello, hi, bye, thanks) → CASUAL
+2. If the message asks about something recent/latest/current → WEB_SEARCH
+3. Everything else about the college → DB_QUERY
+4. Short follow-ups like "what about fees?", "and his number?", "tell me more" → DB_QUERY
+5. Reply with ONLY the label: CASUAL, WEB_SEARCH, or DB_QUERY"""
+
+    client = get_openai()
+    response = client.chat.completions.create(
+        model=LLM_MODEL,
+        messages=[
+            {"role": "system", "content": "You are an intent classifier. Reply with ONLY: CASUAL, WEB_SEARCH, or DB_QUERY"},
+            {"role": "user", "content": prompt}
+        ],
+        temperature=0,
+        max_tokens=10
+    )
+    intent = response.choices[0].message.content.strip().upper()
+    # Sanitize — make sure we only return valid labels
+    if intent not in ("CASUAL", "WEB_SEARCH", "DB_QUERY"):
+        intent = "DB_QUERY"
+
+    print(f"[INTENT] '{user_text[:60]}' → {intent}", flush=True)
+    return intent
+
+# =========================================================
 # LLM: CASUAL REPLY
 # =========================================================
-def generate_casual_reply(user_text: str, mem: list, language: str = "en-IN") -> str:
+def generate_casual_reply(user_text: str, language: str = "en-IN") -> str:
 
-    history_context = ""
-    if mem:
-        lines = [f"  {i+1}. {entry}" for i, entry in enumerate(mem)]
-        history_context = "Previous Context:\n" + "\n".join(lines)
-
-    language_instruction = ""
-    if language == "te-IN":
-        language_instruction = "Generate your response in Telugu (తెలుగు)."
-    else:
-        language_instruction = "Always reply in English."
+    language_instruction = (
+        "Generate your response in Telugu (తెలుగు)."
+        if language == "te-IN"
+        else "Always reply in English."
+    )
 
     prompt = f"""You are a warm, friendly voice receptionist at RCE Ramachandra College of Engineering.
-You are on a LIVE PHONE CALL. The caller said something casual like a greeting, thank you, or goodbye.
+You are on a LIVE PHONE CALL. The caller said something casual.
 
 {language_instruction}
 
-Respond exactly like a real human receptionist would speak on a phone:
-- Use natural warm tone with occasional fillers like "Sure!", "Of course!", "Hey there!"
-- Keep it to ONE short sentence maximum.
-- If they say thank you: "You're welcome! Is there anything else about the college I can help with?"
-- If they say bye: "Alright, have a great day! Feel free to call back anytime."
-- If they say hello/hi: "Hey there! Welcome to RCEE. How can I help you today?"
-- No markdown, no special characters.
-
-{history_context if history_context else "Previous Context:\nNone"}"""
+Respond exactly like a real human receptionist on a phone:
+- Natural warm tone with occasional fillers like "Sure!", "Of course!", "Hey there!"
+- ONE short sentence maximum.
+- If they say thank you → "You're welcome! Is there anything else about the college I can help with?"
+- If they say bye → "Alright, have a great day! Feel free to call back anytime."
+- If they say hello/hi → "Hey there! Welcome to RCEE. How can I help you today?"
+- No markdown, no special characters."""
 
     client = get_openai()
     response = client.chat.completions.create(
@@ -484,7 +479,6 @@ Respond exactly like a real human receptionist would speak on a phone:
     )
 
     answer = response.choices[0].message.content.strip()
-
     if len(answer) > 150:
         answer = answer[:150].rsplit(".", 1)[0].strip() + "."
 
@@ -492,234 +486,245 @@ Respond exactly like a real human receptionist would speak on a phone:
     return answer
 
 # =========================================================
-# LLM: WEB SEARCH ANSWER (searches rcee.ac.in only)
+# LLM: WEB SEARCH ANSWER
 # =========================================================
-def generate_web_answer(user_query: str, mem: list) -> str:
+def generate_web_answer(user_query: str, history_text: str = "") -> str:
 
-    history_context = ""
-    if mem:
-        lines = [f"  {i+1}. {entry}" for i, entry in enumerate(mem)]
-        history_context = "Previous Context:\n" + "\n".join(lines)
+    history_block = ""
+    if history_text:
+        history_block = f"""
+CONVERSATION CONTEXT:
+{history_text}
+Use this context to understand what "it", "that", "this" refers to in the query.
+"""
 
-    # The prompt now acts as the strict commander of the search tool
     prompt = f"""You are a friendly voice assistant for RCE Ramachandra College of Engineering on a phone call.
+{history_block}
 Your job is to search the web to answer the user's query.
 
 CRITICAL SEARCH INSTRUCTION:
-When you use the web search tool, you MUST restrict your search to the college website by appending "site:rcee.ac.in" to your search queries. Ignore all other websites.
-
-{history_context if history_context else "Previous Context:\nNone"}
+When you use the web search tool, restrict your search to the college website by appending "site:rcee.ac.in".
 
 CRITICAL RULES FOR SPOKEN OUTPUT:
-EXTREMELY SHORT: Maximum 1 or 2 short sentences. Do NOT exceed 30 words.
-CONVERSATIONAL: Give a high-level summary. Do NOT list multiple events.
-NO MARKDOWN, NO URLs, NO BULLET POINTS.
+- EXTREMELY SHORT: Maximum 1 or 2 short sentences. Do NOT exceed 30 words.
+- CONVERSATIONAL: High-level summary only. Do NOT list multiple events.
+- NO MARKDOWN, NO URLs, NO BULLET POINTS.
 
-Example good answer: "Recently, the college announced new exam timetables and a workshop on IoT. You can check the website for full details."
+Example: "Recently, the college announced new exam timetables and a workshop on IoT. Check the website for full details."
 
-If nothing relevant is found, say exactly: "I couldn't find recent updates on that. Please check the college website directly."
+If nothing found: "I couldn't find recent updates on that. Please check the college website directly."
 """
 
-    print(f"[WEB] User Query: '{user_query}'", flush=True)
+    print(f"[WEB] Query: '{user_query}'", flush=True)
 
     try:
         client = get_openai()
         response = client.responses.create(
-            model=LLM_MODEL, # Ensure this is set to "gpt-4o" or a compatible model
-            tools=[{
-                "type": "web_search_preview",
-                "search_context_size": "high" # Helps prevent hallucinations by reading more of the site
-            }],
+            model=LLM_MODEL,
+            tools=[{"type": "web_search_preview", "search_context_size": "high"}],
             instructions=prompt,
-            input=user_query # Pass the raw, natural query here
+            input=user_query
         )
-
         answer = response.output_text.strip()
-
         if len(answer) > 300:
             answer = answer[:300].rsplit(".", 1)[0].strip() + "."
-
         print(f"[WEB] Answer: {len(answer)} chars", flush=True)
         return answer
 
     except Exception as e:
         print(f"[WEB] Error: {e}", flush=True)
         return "I couldn't search for that right now. You can check the college website directly."
+
 # =========================================================
-# LLM: GENERATE OPTIMIZED QUERY (with strong context)
+# LLM: GENERATE OPTIMIZED DB QUERY
 # =========================================================
-def generate_query(user_text: str, mem: list) -> str:
+def generate_query(user_text: str, history_text: str) -> str:
+    """
+    Convert user query + conversation history into precise DB search keywords.
+    History is passed explicitly so it reflects the state BEFORE this turn is added.
+    """
 
-    history_context = ""
-    if mem:
-        lines = [f"  {i+1}. {entry}" for i, entry in enumerate(mem)]
-        history_context = "\n".join(lines)
+    context_block = ""
+    if history_text:
+        print(f"[QUERY] Using history:\n{history_text}", flush=True)
+        context_block = f"""
+RECENT CONVERSATION (last {MAX_CALL_HISTORY} turns):
+{history_text}
 
-    prompt = f"""You are an RCEE database query optimizer with advanced context reasoning.
-Your job: Convert user queries into precise search keywords, with expert context resolution.
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+CONTEXT RESOLUTION — CRITICAL RULES:
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+The current query may be a follow-up. It may:
+  • Use pronouns  : "his", "her", "that", "it", "this", "those", "them", "there"
+  • Be incomplete : "what about fees?", "and the rank?", "tell me more", "how about hostel?"
+  • Reference same topic without repeating it
 
-STEP 1: ANALYZE PREVIOUS CONTEXT (CRITICAL)
-Previous context from conversation:
-{history_context if history_context else "None — this is the first question."}
+In ALL follow-up cases, you MUST inject the missing subject/topic/branch from the conversation.
 
-KEY PRINCIPLE: When user says "he", "she", "that person", "him", "her", "the same", etc.,
-IMMEDIATELY resolve to the actual person/entity from context.
+EXAMPLES:
+  History: "Student: CSE HOD contact  Assistant: Dr. XYZ is HOD of CSE"
+  Current: "what is his phone number?"
+  → Keywords: CSE HOD phone contact number
 
-STEP 2: RESOLVE PRONOUNS & REFERENCES
-CRITICAL EXAMPLES:
+  History: "Student: ECE fees  Assistant: ECE tuition fee is 1.2 lakhs"
+  Current: "what about hostel?"
+  → Keywords: ECE hostel fees accommodation
 
-Example 1: User previously asked about CSE fees (1.2 lakhs)
-  New question: "What about hostel fees for the same?"
-  → "the same" = CSE branch
-  → Output: "CSE hostel fees accommodation charges"
+  History: "Student: placement package CSE  Assistant: average package is 4 LPA"
+  Current: "what about ECE?"
+  → Keywords: ECE placement package salary
 
-Example 2: Context mentions "CSE HOD: Dr G Chamundeswari"
-  New question: "What is his phone number?"
-  → "his" = Dr G Chamundeswari (CSE HOD)
-  → Output: "Dr G Chamundeswari CSE HOD phone contact"
+Only IGNORE context if the user clearly changes to a completely unrelated topic.
+"""
+    else:
+        print("[QUERY] No history — treating as fresh query", flush=True)
 
-Example 3: Context mentions "Principal: Dr. K. Subba Rao"
-  New question: "Who is the principal?"
-  → Clear pronoun: principal
-  → Output: "Principal Dr K Subba Rao contact"
+    prompt = f"""You are a database query optimizer for RCEE college information system.
+Convert the user query into precise search keywords for the college database.
+{context_block}
+CURRENT QUERY: "{user_text}"
 
-STEP 3: GENERATE KEYWORDS
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+OUTPUT RULES (STRICT):
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+- Output ONLY keywords. No sentences, no JSON, no quotes, no explanations, no punctuation.
+- 2 to 6 meaningful keywords only.
+- Remove: RCEE, RCE, college, engineering, tell, me, what, is, are, the, a, an, please
+- Never output single letters or initials (no "Dr. M." → use full surname + role)
+- For person queries: full surname + role (example: "Prasad principal contact")
+- For follow-ups: ALWAYS include the topic/branch/subject from conversation history
 
-OUTPUT RULES:
-- Keywords ONLY. No sentences. No JSON. No quotes. No explanations.
-- After resolving pronouns, use the RESOLVED name in keywords.
-- Include department/role when mentioning a person.
-- Never put numbers in output (numbers confuse search).
-- Be specific: "CSE branch" not just "CSE", "HOD contact" not just "contact"
+BRANCH MAPPING:
+  cse → CSE Computer Science
+  ece → ECE Electronics Communication
+  eee → EEE Electrical Electronics
+  aiml → AIML Artificial Intelligence Machine Learning
+  aids → AI&DS Data Science
+  mech → Mechanical Engineering
+  civil → Civil Engineering
+  mba → MBA Business Administration
+  mtech → M.Tech
 
-ABBREVIATION MAPPING (use these expansions):
-- CSE → CSE Computer Science | ECE → ECE Electronics Communication
-- EEE → EEE Electrical Electronics | AIML → AIML Artificial Intelligence Machine Learning
-- AI&DS → AI&DS Data Science | HOD → HOD head department | M.Tech → M.Tech postgraduate
-- EAPCET → AP EAPCET entrance exam | ECET → AP ECET lateral entry
-- MBA → MBA business | Mech → Mechanical Engineering | Civil → Civil Engineering
+SYNONYM EXPANSION (use relevant synonyms):
+  salary/pay → package CTC LPA
+  placements → recruiters companies jobs hiring
+  fees/cost → tuition hostel mess fee
+  cutoff/rank/eligibility → closing last rank EAMCET EAPCET
+  bus/transport → route bus number
+  scholarship → waiver reimbursement
+  hod/head → HOD head department
+  contact/phone/number → contact phone email
 
-SYNONYM EXPANSION (think laterally):
-- Salary/package → CTC LPA lakhs | Placements → recruiters companies jobs
-- Fees → tuition hostel mess charges | Cutoff/rank → eligibility last rank
-- Bus → transport route | Scholarship → waiver reimbursement
-- Contact → phone email office address | Infrastructure → labs facilities
-
-NOW PROCESS THE USER QUERY:
-User said: "{user_text}"
-
-Think through:
-1. What entity is the user asking about? (who, what branch, what topic)
-2. Are there pronouns (he, she, his, her, it, that, the same)?
-3. Does context resolve these pronouns?
-4. What are the key search terms after resolution?
-
-Output ONLY the final keywords (no thinking process shown):"""
+Output ONLY the final keywords on one line:"""
 
     client = get_openai()
     response = client.chat.completions.create(
-        model=LLM_REASONING_MODEL,  # Use GPT-4 for better reasoning
+        model=LLM_MODEL,
         messages=[
-            {"role": "system", "content": "You are a query optimization expert. Output ONLY clean search keywords, nothing else."},
+            {
+                "role": "system",
+                "content": (
+                    "You are a query optimization expert. "
+                    "Output ONLY clean search keywords on one line, nothing else."
+                )
+            },
             {"role": "user", "content": prompt}
         ],
         temperature=0,
-        max_tokens=200
+        max_tokens=60
     )
 
     result = response.choices[0].message.content.strip()
-    print(f"[QUERY] Input: '{user_text}'", flush=True)
-    print(f"[QUERY] Context: '{history_context[:80] if history_context else 'None'}'...", flush=True)
-    print(f"[QUERY] Output: '{result}'", flush=True)
+    # Safety: remove any accidental quotes or newlines
+    result = result.replace('"', '').replace("'", '').replace('\n', ' ').strip()
+
+    print(f"[QUERY] Input  : '{user_text}'", flush=True)
+    print(f"[QUERY] Output : '{result}'", flush=True)
     return result
 
 # =========================================================
 # LLM: GENERATE ANSWER
 # =========================================================
-def generate_answer(user_query: str, chunks: list, mem: list, target_language: str = "en-IN") -> str:
-
-    history_context = ""
-    if mem:
-        lines = [f"  {i+1}. {entry}" for i, entry in enumerate(mem)]
-        history_context = "Previous conversation context:\n" + "\n".join(lines)
+def generate_answer(
+    user_query: str,
+    chunks: list,
+    history_text: str,
+    target_language: str = "en-IN"
+) -> str:
+    """
+    Generate a spoken answer in English.
+    Translation (if needed) happens AFTER this, in the pipeline.
+    history_text is the conversation so far (in English).
+    """
 
     chunks_text = "\n\n".join(chunks) if chunks else "No results found."
 
-    # Adjust language instruction
-    language_instruction = ""
-    if target_language == "te-IN":
-        language_instruction = "\nIMPORTANT: Generate your response in Telugu (తెలుగు). Translate all information into natural Telugu that a native speaker would understand."
-    else:
-        language_instruction = "\nIMPORTANT: Generate your response in English. No translation needed."
+    context_block = ""
+    if history_text:
+        context_block = f"""
+CONVERSATION SO FAR (English, use for context — avoid repeating already-given info):
+{history_text}
+"""
 
     prompt = f"""Role: Official Voice Call Assistant for RCE Ramachandra College of Engineering (Autonomous).
-You are speaking to a caller on a LIVE PHONE CALL. Generate responses as NATURAL SPOKEN SENTENCES — 
-exactly how a helpful human receptionist would speak on a phone. No written formatting whatsoever.
+You are on a LIVE PHONE CALL. Speak like a warm, helpful human receptionist.
+Generate responses as NATURAL SPOKEN SENTENCES — no written formatting whatsoever.
 
-Task: Answer the user's query using ONLY the DB Results below.
-If the user refers to someone or something from previous context (like "his", "that", "the same"), 
-use the previous context to understand what they mean.
-
-{language_instruction}
-
-{history_context if history_context else "Previous conversation context:\nNone"}
-
+Task: Answer the user's current query using ONLY the DB Results below.
+{context_block}
 DB Results:
 {chunks_text}
 
-VOICE CALL STYLE RULES (HIGHEST PRIORITY)
-- You are on a PHONE CALL. Speak like a warm, helpful human receptionist.
-- Keep responses SHORT — maximum 2 to 3 spoken sentences.
-- Use natural conversational fillers occasionally: "So", "Well", "Actually", "Sure".
-- Add natural pauses with commas where a human would breathe.
-- For longer info like fees or steps, give KEY highlights and say "Would you like me to go into more detail?"
-- NEVER use markdown, bullet points, numbered lists, URLs, asterisks, dashes, or any written formatting.
-- NEVER say "according to the data", "based on the results", or "as per the database".
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+VOICE CALL STYLE (HIGHEST PRIORITY):
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+- SHORT: Maximum 2 to 3 spoken sentences.
+- NATURAL: Use "So", "Well", "Actually", "Sure" occasionally.
+- Add commas where a human would pause/breathe.
+- For complex info (fees, steps): give KEY highlights then ask "Would you like more details?"
+- NEVER use: markdown, bullet points, numbered lists, URLs, asterisks, dashes, or any symbol.
+- NEVER say: "according to the data", "based on the results", "as per the database".
+- ALWAYS answer in ENGLISH (translation is handled separately).
 
 PHONE NUMBER RULES (CRITICAL):
-- ALWAYS speak phone numbers as grouped digits, NEVER convert to words like "thousand".
-- Format: "9 4 9 2 9, 3 6 2 2 2" or "94929, 36222" — NOT "9 thousand" or "94.9 thousand".
-- Example: The number is 94929, 36222. Say it exactly like that.
+- Speak phone numbers as grouped digits ONLY.
+- Format: "94929, 36222" — NEVER "9 thousand" or "ninety-four thousand".
 
 NUMBER RULES:
-- For fees/money: say "around one lakh twenty thousand" or "about 1.2 lakhs".
-- For ranks: say "around 35 thousand" or "about 4 thousand".
-- For phone numbers: NEVER convert — speak digits as-is with natural grouping.
+- Fees/money   : "around one lakh twenty thousand" or "about 1.2 lakhs"
+- Ranks        : "around 35 thousand" or "about 4 thousand"
+- Phone numbers: NEVER convert — speak digits as-is with natural grouping.
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-GENERAL ANSWER RULES
+ANSWER RULES:
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 1. Be concise, professional, and friendly. Use NO external knowledge.
-2. Think from a student's or parent's perspective — they may ask in broken English, Telugu-English mix, or use slang. Interpret the INTENT behind the query, not the literal words.
-3. If the query is unclear but DB Results have related info, answer with what you have.
-4. If DB Results contain ANY information related to the people, topics, or entities in the query — even partially — use it. Never refuse when relevant data exists.
-5. ONLY if DB Results have absolutely NO relevant information, say:
-   "I don't have that specific information right now. You can contact the college helpdesk at 94929, 36222, between 9 AM and 5 PM, or email helpdesk at rcee dot ac dot in."
-   Then give a brief helpful suggestion based on what you do know — no hallucinations.
-6. Do not mention database, results, data sources, or chunks. Answer as if you naturally know it.
-7. Don't answer queries not related to RCEE. Politely say you only help with RCEE queries.
+2. Think from a student's or parent's perspective.
+3. Use DB Results even if only partially relevant.
+4. ONLY if DB Results have absolutely NO relevant info, say:
+   "I don't have that specific information right now. You can contact the college helpdesk
+    at 94929, 36222, between 9 AM and 5 PM, or email helpdesk at rcee dot ac dot in."
+5. Do not reveal database, results, or data sources. Answer as if you naturally know it.
+6. Don't answer queries unrelated to RCEE. Politely say you only help with RCEE queries.
+7. If this is a follow-up question, directly answer the new sub-topic — don't repeat
+   information already given in the conversation history.
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-RANK & ELIGIBILITY RULES (CRITICAL)
+RANK & ELIGIBILITY RULES (CRITICAL):
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-These apply to EAMCET, EAPCET (first year B Tech) and AP ECET (lateral entry second year B Tech).
-
-- Lower rank number means better rank. Rank 1 is the best.
-- "Last Rank" means closing rank or cutoff. Compare student rank against Last Rank ONLY.
-- "First Rank" means topper's rank. NEVER use it for eligibility.
-- ELIGIBLE if student's rank is less than or equal to Last Rank.
-- NOT ELIGIBLE if student's rank is greater than Last Rank.
-
-Speak eligibility naturally:
-"With your rank of 35 thousand, you're eligible for Mechanical since the cutoff was about one lakh seventy seven thousand. But CSE AIML might be difficult, the cutoff was around 4 thousand."
+- Lower rank number = better rank. Rank 1 is the best.
+- "Last Rank" = closing rank / cutoff. Use ONLY this for eligibility.
+- "First Rank" = topper's rank. NEVER use for eligibility checks.
+- ELIGIBLE   : student rank ≤ Last Rank
+- NOT ELIGIBLE: student rank > Last Rank
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-SPECIFIC QUERY TYPES (adapt for voice)
+SPECIFIC QUERY HANDLING:
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-- BUS: Mention bus numbers naturally. "Bus number 5 and 12 cover that route."
-- FEES: Speak amounts naturally. "It's about one lakh fifty thousand total, including tuition, hostel, and mess."
-- CONTACTS: Speak name, role, and phone number with digit grouping. "You can reach Doctor Sharma, the HOD of CSE, at 98765, 43210."
-- ADMISSION STEPS: Summarize briefly. "There are about 5 steps, starting with online registration, then document verification. Want me to walk you through each one?"
+- BUS      : Mention bus numbers naturally in speech.
+- FEES     : Speak amounts naturally ("about one lakh" etc.).
+- CONTACTS : Speak name, role, then phone number with digit grouping.
+- ADMISSION: Summarize key steps briefly.
 """
 
     client = get_openai()
@@ -734,217 +739,192 @@ SPECIFIC QUERY TYPES (adapt for voice)
     )
 
     answer = response.choices[0].message.content.strip()
-
     if len(answer) > 400:
         answer = answer[:400].rsplit(".", 1)[0].strip() + "."
 
-    print(f"[ANSWER] {len(answer)} chars", flush=True)
+    print(f"[ANSWER] {len(answer)} chars: '{answer[:100]}'", flush=True)
     return answer
 
 # =========================================================
-# LLM: COMPRESS TURN FOR MEMORY
+# MAIN PROCESS FUNCTION
 # =========================================================
-def compress_turn(query: str, answer: str) -> str:
+async def process_voice(audio_bytes: bytes, search_fn) -> bytes:
+    """
+    Full pipeline:
+      STT → (translate to English) → intent detection →
+      route (casual / web / db) → generate answer (English) →
+      add to history → (translate answer if needed) → TTS → return audio
+    
+    KEY DESIGN DECISIONS:
+    1. History is read BEFORE adding current query (so query gen sees prior turns only)
+    2. History is stored in ENGLISH always
+    3. Intent detection uses LLM (not keyword matching) so it understands follow-ups
+    4. generate_query receives history explicitly, not via global read
+    5. generate_answer receives history explicitly for context-aware answers
+    """
 
-    client = get_openai()
-    response = client.chat.completions.create(
-        model=LLM_MODEL,
-        messages=[
-            {"role": "system", "content": """Compress this Q&A into one short line for context memory.
-Format: "topic/person → key facts"
-Max 20 words. Include names, numbers, and key details.
-Examples:
-- "HR: Dr. B. Prasad Babu, phone 9492923222"
-- "CSE fees → 1.2 lakhs/year tuition + hostel"
-- "Principal: Dr. K. Subba Rao, email principal@rcee.ac.in"
-Keep entity names intact — they are needed for follow-up questions."""},
-            {"role": "user", "content": f"Q: {query}\nA: {answer}"}
-        ],
-        temperature=0,
-        max_tokens=50
-    )
-
-    compressed = response.choices[0].message.content.strip()
-    print(f"[MEMORY] {compressed}", flush=True)
-    return compressed
-
-# =========================================================
-# MAIN PROCESS FUNCTION (with cancellation support)
-# =========================================================
-class CallCancelled(Exception):
-    """Raised when user ends the call mid-processing."""
-    pass
-
-def _check_cancelled(session_id: str):
-    """Raise CallCancelled if this session was ended by the user."""
-    if is_session_cancelled(session_id):
-        print(f"[CANCELLED] Session {session_id} — stopping pipeline", flush=True)
-        raise CallCancelled(f"Session {session_id} cancelled by user")
-
-async def process_voice(audio_bytes: bytes, search_fn, session_id: str = "default") -> bytes:
-
-    mem = get_memory(session_id)
-
-    # Clear any previous cancellation for this session (fresh request)
-    clear_cancellation(session_id)
+    clear_cancellation()
 
     try:
-        # ── Step 1: STT ──
-        print(f"\n[STEP 1] Speech to Text | Session: {session_id}", flush=True)
-        _check_cancelled(session_id)
-        stt_result = await stt(audio_bytes)
-        _check_cancelled(session_id)
+        # ── Step 1: STT ──────────────────────────────────────────────────────
+        print(f"\n{'='*60}", flush=True)
+        print("[STEP 1] Speech to Text", flush=True)
+        _check_cancelled()
+
+        stt_result  = await stt(audio_bytes)
+        _check_cancelled()
 
         transcript = stt_result.get("transcript", "").strip()
-        language = stt_result.get("language", "en-IN")
+        language   = stt_result.get("language", "en-IN")
 
         if not transcript:
             print("[CALL] Empty transcript", flush=True)
-            _check_cancelled(session_id)
-            error_msg = "Sorry, I didn't catch that."
+            error_msg = "Sorry, I didn't catch that. Could you please repeat?"
+            _check_cancelled()
             if language != "en-IN":
                 error_msg = await translate(error_msg, "en-IN", language)
-            _check_cancelled(session_id)
+                _check_cancelled()
             return await tts(error_msg, language)
 
-        # ── Step 1.5: Translate to English if needed ──
+        # ── Step 2: Translate to English if needed ───────────────────────────
         english_text = transcript
         if language != "en-IN":
-            print(f"\n[STEP 1.5] Translating {language} → English", flush=True)
-            _check_cancelled(session_id)
+            print(f"\n[STEP 2] Translate {language} → English", flush=True)
+            _check_cancelled()
             english_text = await translate(transcript, language, "en-IN")
-            _check_cancelled(session_id)
+            _check_cancelled()
+            print(f"[STEP 2] English: '{english_text}'", flush=True)
+        else:
+            print(f"\n[STEP 2] Language is English — no translation needed", flush=True)
 
-        # ── Step 2: Casual reply ──
-        if is_casual_message(english_text):
-            print("\n[STEP 2] Casual message — replying directly", flush=True)
-            _check_cancelled(session_id)
-            answer = generate_casual_reply(english_text, mem, language)
-            _check_cancelled(session_id)
-            audio = await tts(answer, language)
-            _check_cancelled(session_id)
-            return audio
+        # ── Step 3: Read history BEFORE this turn ────────────────────────────
+        # IMPORTANT: We capture history here so generate_query and generate_answer
+        # see ONLY the PREVIOUS turns, not the current one.
+        print(f"\n[STEP 3] Reading conversation history", flush=True)
+        history_text = get_call_history_text()
+        if history_text:
+            print(f"[STEP 3] History:\n{history_text}", flush=True)
+        else:
+            print("[STEP 3] No prior history", flush=True)
 
-        # ── Step 3: Web search ──
-        if needs_web_search(english_text):
-            print("\n[STEP 3] Web search — searching rcee.ac.in", flush=True)
-            _check_cancelled(session_id)
-            answer = generate_web_answer(english_text, mem)
-            _check_cancelled(session_id)
+        # ── Step 4: Intent Detection (LLM-based, context-aware) ──────────────
+        print(f"\n[STEP 4] Intent Detection", flush=True)
+        _check_cancelled()
+        intent = detect_intent(english_text, history_text)
+        _check_cancelled()
 
+        # ── Step 5: Route by Intent ───────────────────────────────────────────
+        print(f"\n[STEP 5] Routing → {intent}", flush=True)
+
+        # ── CASUAL ────────────────────────────────────────────────────────────
+        if intent == "CASUAL":
+            print("[ROUTE] Casual message", flush=True)
+            _check_cancelled()
+            answer_en = generate_casual_reply(english_text, language)
+            _check_cancelled()
+
+            # Add both turns to history (English)
+            add_to_call_history("user", english_text)
+            add_to_call_history("assistant", answer_en)
+
+            # Translate answer if needed
+            final_answer = answer_en
             if language != "en-IN":
-                answer = await translate(answer, "en-IN", language)
-                _check_cancelled(session_id)
+                _check_cancelled()
+                final_answer = await translate(answer_en, "en-IN", language)
+                _check_cancelled()
 
-            audio = await tts(answer, language)
-            _check_cancelled(session_id)
-
-            try:
-                compressed = compress_turn(english_text, answer)
-                mem.append(compressed)
-                if len(mem) > MAX_MEMORY:
-                    sessions[session_id] = mem[-MAX_MEMORY:]
-                print(f"[MEMORY] Session {session_id}: {len(mem)} turns", flush=True)
-            except Exception as e:
-                print(f"[MEMORY] Failed: {e}", flush=True)
-
+            audio = await tts(final_answer, language)
+            _check_cancelled()
             return audio
 
-        # ── Step 4: Query generation ──
-        print("\n[STEP 4] Query Generation", flush=True)
-        _check_cancelled(session_id)
-        db_query = generate_query(english_text, mem)
-        _check_cancelled(session_id)
+        # ── WEB SEARCH ────────────────────────────────────────────────────────
+        if intent == "WEB_SEARCH":
+            print("[ROUTE] Web search", flush=True)
+            _check_cancelled()
+            # Pass history so web search understands pronouns/follow-ups
+            answer_en = generate_web_answer(english_text, history_text)
+            _check_cancelled()
+
+            # Add both turns to history (English)
+            add_to_call_history("user", english_text)
+            add_to_call_history("assistant", answer_en)
+
+            # Translate answer if needed
+            final_answer = answer_en
+            if language != "en-IN":
+                _check_cancelled()
+                final_answer = await translate(answer_en, "en-IN", language)
+                _check_cancelled()
+
+            audio = await tts(final_answer, language)
+            _check_cancelled()
+            return audio
+
+        # ── DB QUERY ──────────────────────────────────────────────────────────
+        print("[ROUTE] DB query", flush=True)
+
+        # Step 5a: Generate optimized DB query keywords
+        # Pass history_text explicitly (captured BEFORE this turn)
+        print(f"\n[STEP 5a] Query Generation", flush=True)
+        _check_cancelled()
+        db_query = generate_query(english_text, history_text)
+        _check_cancelled()
 
         if not db_query.strip():
-            print("[CALL] Empty query — sending to answer generator", flush=True)
-            _check_cancelled(session_id)
-            answer = generate_answer(english_text, [], mem, language)
-            _check_cancelled(session_id)
-            audio = await tts(answer, language)
-            _check_cancelled(session_id)
-            return audio
+            print("[CALL] Empty query generated — using raw English text", flush=True)
+            db_query = english_text
 
-        # ── Step 4.5: Check if answer is already in context ──
-        print("\n[STEP 4.5] Checking previous context for answer", flush=True)
-        _check_cancelled(session_id)
-        found_in_context, context_answer = await check_answer_in_context(english_text, mem)
-        _check_cancelled(session_id)
-        
-        if found_in_context and context_answer:
-            print(f"[CONTEXT_HIT] Found answer in memory - skipping DB search", flush=True)
-            answer = context_answer
-            
-            # Translate to user's language if needed
-            if language != "en-IN":
-                print(f"\n[STEP 5.5] Translating context answer → {language}", flush=True)
-                _check_cancelled(session_id)
-                answer = await translate(answer, "en-IN", language)
-                _check_cancelled(session_id)
-            
-            # TTS and return
-            print("\n[STEP 6] Text to Speech (from context)", flush=True)
-            _check_cancelled(session_id)
-            audio = await tts(answer, language)
-            _check_cancelled(session_id)
-            
-            # Save to memory
-            try:
-                compressed = compress_turn(english_text, context_answer)
-                mem.append(compressed)
-                if len(mem) > MAX_MEMORY:
-                    sessions[session_id] = mem[-MAX_MEMORY:]
-                print(f"[MEMORY] Session {session_id}: {len(mem)} turns", flush=True)
-            except Exception as e:
-                print(f"[MEMORY] Failed: {e}", flush=True)
-            
-            return audio
-
-        # ── Step 5: DB search ──
-        print("\n[STEP 5] DB Search", flush=True)
-        _check_cancelled(session_id)
+        # Step 5b: Search the database
+        print(f"\n[STEP 5b] DB Search: '{db_query}'", flush=True)
+        _check_cancelled()
         chunks = search_fn(db_query)
-        _check_cancelled(session_id)
+        _check_cancelled()
+        print(f"[STEP 5b] Got {len(chunks)} chunk(s)", flush=True)
 
-        # ── Step 6: Answer generation (in user's language) ──
-        print("\n[STEP 6] Answer Generation", flush=True)
-        _check_cancelled(session_id)
-        answer = generate_answer(english_text, chunks, mem, language)
-        _check_cancelled(session_id)
+        # Step 5c: Generate answer in English
+        print(f"\n[STEP 5c] Answer Generation", flush=True)
+        _check_cancelled()
+        # Pass history_text so answer avoids repeating prior info
+        answer_en = generate_answer(english_text, chunks, history_text, language)
+        _check_cancelled()
 
-        # ── Step 6.5: Translate answer if needed ──
+        # Add both turns to history (always in English)
+        add_to_call_history("user", english_text)
+        add_to_call_history("assistant", answer_en)
+
+        # Step 5d: Translate answer if caller is using a non-English language
+        final_answer = answer_en
         if language != "en-IN":
-            print(f"\n[STEP 6.5] Translating answer → {language}", flush=True)
-            _check_cancelled(session_id)
-            answer = await translate(answer, "en-IN", language)
-            _check_cancelled(session_id)
+            print(f"\n[STEP 5d] Translating answer → {language}", flush=True)
+            _check_cancelled()
+            final_answer = await translate(answer_en, "en-IN", language)
+            _check_cancelled()
 
-        # ── Step 7: TTS ──
-        print("\n[STEP 7] Text to Speech", flush=True)
-        _check_cancelled(session_id)
-        audio = await tts(answer, language)
-        _check_cancelled(session_id)
+        # Step 5e: TTS
+        print(f"\n[STEP 5e] Text to Speech", flush=True)
+        _check_cancelled()
+        audio = await tts(final_answer, language)
+        _check_cancelled()
 
-        # ── Step 8: Save memory ──
-        if chunks:
-            print("\n[STEP 8] Saving to memory", flush=True)
-            try:
-                compressed = compress_turn(english_text, answer)
-                mem.append(compressed)
-                if len(mem) > MAX_MEMORY:
-                    sessions[session_id] = mem[-MAX_MEMORY:]
-                print(f"[MEMORY] Session {session_id}: {len(mem)} turns", flush=True)
-            except Exception as e:
-                print(f"[MEMORY] Failed: {e}", flush=True)
-        else:
-            print("\n[STEP 8] No chunks — skipping memory", flush=True)
-
+        print(f"[PIPELINE] Complete ✓", flush=True)
         return audio
 
     except CallCancelled:
-        print(f"[PIPELINE] Stopped — session {session_id} cancelled", flush=True)
-        clear_cancellation(session_id)
+        print("[PIPELINE] Stopped — call cancelled", flush=True)
+        clear_cancellation()
         return b""
+
+    except Exception as e:
+        print(f"[PIPELINE] Unexpected error: {e}", flush=True)
+        import traceback
+        traceback.print_exc()
+        # Attempt to return a graceful error message
+        try:
+            error_msg = "Sorry, I ran into a technical issue. Please try again."
+            return await tts(error_msg, "en-IN")
+        except Exception:
+            return b""
 
 # =========================================================
 # WARMUP & STATUS
@@ -953,7 +933,6 @@ _ready = False
 
 def warmup():
     global _ready
-
     print("[VOICE] Warming up...", flush=True)
 
     try:
@@ -981,14 +960,9 @@ def is_ready() -> bool:
     return _ready
 
 # =========================================================
-# END SESSION (with cancellation)
+# END SESSION
 # =========================================================
 def end_session(session_id: str = "default"):
-    cancel_session(session_id)
-
-    if session_id in sessions:
-        turns = len(sessions[session_id])
-        del sessions[session_id]
-        print(f"[SESSION] {session_id} ended. {turns} turns cleared.", flush=True)
-    else:
-        print(f"[SESSION] {session_id} not found.", flush=True)
+    cancel_call()
+    clear_call_history()
+    print(f"[SESSION] Ended. History cleared.", flush=True)

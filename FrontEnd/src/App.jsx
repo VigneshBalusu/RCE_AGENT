@@ -45,7 +45,7 @@ export default function App() {
   const [input,      setInput]      = useState("");
   const [busy,       setBusy]       = useState(false);
   const [isTyping,   setIsTyping]   = useState(false);
-  const [theme,      setTheme]      = useState("dark");
+
   const [isRecording,setIsRecording]= useState(false);
   const [callState,  setCallState]  = useState(CALL.IDLE);
 
@@ -64,15 +64,14 @@ export default function App() {
   const silenceLoop     = useRef(null);
   const callMime        = useRef({ mime: "", ext: "webm" });
   const callStream      = useRef(null);
-  const sessionIdRef    = useRef(null);
 
   // NEW: refs for immediate stop
   const currentAudioRef = useRef(null);   // currently playing Audio element
   const callAbortRef    = useRef(null);   // AbortController for in-flight fetch
 
   useEffect(() => {
-    document.documentElement.setAttribute("data-theme", theme);
-  }, [theme]);
+    document.documentElement.setAttribute("data-theme", "dark");
+  }, []);
 
   useEffect(() => {
     chatEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -110,38 +109,54 @@ export default function App() {
     }, 15);
   };
 
-  /* ─────────────── TEXT SEND ─────────────── */
-  /* ─────────────── TEXT SEND ─────────────── */
-  const sendText = async (text) => {
-    const msg = (text || input).trim();
-    if (!msg || busy || isTyping) return;
-    setMessages(m => [...m, { role: "user", data: msg }]);
-    setInput("");
-    setBusy(true);
+  /* ─────────────── BUILD CHAT HISTORY ─────────────── */
+  const buildChatHistory = (extraMsg = null) => {
+    const all = extraMsg ? [...messages, extraMsg] : [...messages];
+    const recent = all
+      .filter(m => !m._isVoice && m.data)
+      .slice(-10);                         // last 10 messages ≈ 5 turns
 
-    // NEW: Ensure session ID exists for this user session
-    if (!sessionIdRef.current) {
-      sessionIdRef.current = crypto.randomUUID?.() || `session_${Date.now()}`;
-    }
+    if (recent.length === 0) return "";
 
-    try {
-      const res = await fetch(API_URL, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ 
-          query: msg, 
-          voice_mode: false,
-          session_id: sessionIdRef.current // <-- ADDED HERE
-        }),
-      });
-      const { answer } = await extractResponse(res);
-      setBusy(false);
-      answer ? typewrite(answer) : pushError("No response received.");
-    } catch {
-      setBusy(false);
-      pushError("Network error. Please try again.");
-    }
-  };
+    return recent
+      .map(m => `${m.role === "user" ? "Student" : "Assistant"}: ${m.data}`)
+      .join("\n");
+  };
+
+  /* ─────────────── FORMAT MARKDOWN ─────────────── */
+  const formatMarkdown = (text) => {
+    if (!text) return text;
+    // Add double newline before numbered items (1. 2. 3.) when inline
+    let formatted = text.replace(/([^\n])\s*(\d+\.\s)/g, '$1\n\n$2');
+    // Add double newline before bullet points (- or *) when inline
+    formatted = formatted.replace(/([^\n])\s*([\-\*]\s)/g, '$1\n\n$2');
+    return formatted.trim();
+  };
+
+  /* ─────────────── TEXT SEND ─────────────── */
+  const sendText = async (text) => {
+    const msg = (text || input).trim();
+    if (!msg || busy || isTyping) return;
+    setMessages(m => [...m, { role: "user", data: msg }]);
+    setInput("");
+    setBusy(true);
+
+    const chatHistory = buildChatHistory({ role: "user", data: msg });
+
+    try {
+      const res = await fetch(API_URL, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ query: msg, chat_history: chatHistory }),
+      });
+      const { answer } = await extractResponse(res);
+      setBusy(false);
+      answer ? typewrite(formatMarkdown(answer)) : pushError("No response received.");
+    } catch {
+      setBusy(false);
+      pushError("Network error. Please try again.");
+    }
+  };
 
   /* ─────────────── VOICE (mic button) ─────────────── */
   const toggleRecording = async () => {
@@ -175,54 +190,46 @@ export default function App() {
   };
 
   const submitVoice = async () => {
-    if (Date.now() - recordStart.current < 1000) return pushError("Recording too short.");
-    const base     = stripCodec(recorderRef.current?.mimeType || recorderRef.current?._mime || "");
-    const safeType = base.includes("mp4") ? "audio/mp4" : base.includes("ogg") ? "audio/ogg" : "audio/webm";
-    const ext      = safeType.includes("mp4") ? "mp4" : safeType.includes("ogg") ? "ogg" : "webm";
-    const blob     = new Blob(chunksRef.current, { type: safeType });
-    if (blob.size < 500) return pushError("No audio detected.");
+    if (Date.now() - recordStart.current < 1000) return pushError("Recording too short.");
+    const base     = stripCodec(recorderRef.current?.mimeType || recorderRef.current?._mime || "");
+    const safeType = base.includes("mp4") ? "audio/mp4" : base.includes("ogg") ? "audio/ogg" : "audio/webm";
+    const ext      = safeType.includes("mp4") ? "mp4" : safeType.includes("ogg") ? "ogg" : "webm";
+    const blob     = new Blob(chunksRef.current, { type: safeType });
+    if (blob.size < 500) return pushError("No audio detected.");
 
-    setMessages(m => [...m, { role: "user", data: "🎤 Voice message", _isVoice: true }]);
-    setBusy(true);
+    setMessages(m => [...m, { role: "user", data: "🎤 Voice message", _isVoice: true }]);
+    setBusy(true);
 
-    // NEW: Ensure session ID exists
-    if (!sessionIdRef.current) {
-      sessionIdRef.current = crypto.randomUUID?.() || `session_${Date.now()}`;
-    }
+    const chatHistory = buildChatHistory();
 
-    const fd = new FormData();
-    fd.append("file", new File([blob], `voice.${ext}`, { type: safeType }));
-    fd.append("session_id", sessionIdRef.current); // <-- ADDED HERE
+    const fd = new FormData();
+    fd.append("file", new File([blob], `voice.${ext}`, { type: safeType }));
+    fd.append("chat_history", JSON.stringify(chatHistory));
 
-    try {
-      const res = await fetch(API_URL, { method: "POST", body: fd });
-      const { answer, transcript } = await extractResponse(res);
-      if (transcript) {
-        setMessages(m => {
-          const u = [...m];
-          for (let i = u.length - 1; i >= 0; i--) {
-            if (u[i]._isVoice) { u[i] = { role: "user", data: transcript }; break; }
-          }
-          return u;
-        });
-      }
-      setBusy(false);
-      answer ? typewrite(answer) : pushError("Couldn't understand. Please try again.");
-    } catch (e) {
-      setBusy(false);
-      pushError(`Voice failed: ${e.message}`);
-    }
-  };
+    try {
+      const res = await fetch(API_URL, { method: "POST", body: fd });
+      const { answer, transcript } = await extractResponse(res);
+      if (transcript) {
+        setMessages(m => {
+          const u = [...m];
+          for (let i = u.length - 1; i >= 0; i--) {
+            if (u[i]._isVoice) { u[i] = { role: "user", data: transcript }; break; }
+          }
+          return u;
+        });
+      }
+      setBusy(false);
+      answer ? typewrite(formatMarkdown(answer)) : pushError("Couldn't understand. Please try again.");
+    } catch (e) {
+      setBusy(false);
+      pushError(`Voice failed: ${e.message}`);
+    }
+  };
 
   /* ─────────────── CALL FEATURE ─────────────── */
   const startCall = async () => {
     try {
       setCallState(CALL.CONNECTING);
-// Keep existing session if it exists, otherwise create one
-
-  if (!sessionIdRef.current) {
-    sessionIdRef.current = crypto.randomUUID?.() || `session_${Date.now()}`;
-}
 
       let ready = false;
       let retries = 0;
@@ -271,22 +278,15 @@ export default function App() {
     const { mime, ext } = getBestMime();
     callMime.current = { mime, ext };
 
-    callRecorder.current = new MediaRecorder(
-      callStream.current,
-      mime ? { mimeType: mime } : {}
-    );
-
-    callChunks.current = [];
-
-    callRecorder.current.ondataavailable = (e) => {
-      if (e.data?.size > 0) callChunks.current.push(e.data);
-    };
-
-    callRecorder.current.onstop = submitCallAudio;
-    callRecorder.current.start(250);
-
     const buf = new Uint8Array(analyserRef.current.fftSize);
+    const VOICE_THRESHOLD = 6;    // RMS level to detect speech
+    const SILENCE_TIMEOUT = 2000; // 2s silence after speaking → send
+
+    let voiceDetected = false;
     let silentMs = 0;
+
+    // Phase 1: Just listen — don't record yet
+    setCallState(CALL.LISTENING);
 
     silenceLoop.current = setInterval(() => {
       if (!callActive.current) {
@@ -299,16 +299,38 @@ export default function App() {
         buf.reduce((s, v) => s + (v - 128) ** 2, 0) / buf.length
       );
 
-      if (rms < 4) {
-        silentMs += 100;
-        if (silentMs >= 2000) {
-          clearInterval(silenceLoop.current);
-          if (callRecorder.current?.state !== "inactive") {
-            callRecorder.current.stop();
-          }
+      if (!voiceDetected) {
+        // ── Phase 1: Waiting for voice activity ──
+        if (rms >= VOICE_THRESHOLD) {
+          voiceDetected = true;
+          silentMs = 0;
+
+          // NOW start recording
+          callRecorder.current = new MediaRecorder(
+            callStream.current,
+            mime ? { mimeType: mime } : {}
+          );
+          callChunks.current = [];
+
+          callRecorder.current.ondataavailable = (e) => {
+            if (e.data?.size > 0) callChunks.current.push(e.data);
+          };
+          callRecorder.current.onstop = submitCallAudio;
+          callRecorder.current.start(250);
         }
       } else {
-        silentMs = 0;
+        // ── Phase 2: Recording — stop after 2s silence ──
+        if (rms < 4) {
+          silentMs += 100;
+          if (silentMs >= SILENCE_TIMEOUT) {
+            clearInterval(silenceLoop.current);
+            if (callRecorder.current?.state !== "inactive") {
+              callRecorder.current.stop();
+            }
+          }
+        } else {
+          silentMs = 0;
+        }
       }
     }, 100);
   };
@@ -363,7 +385,6 @@ export default function App() {
 
     const fd = new FormData();
     fd.append("file", new File([blob], `call.${safeExt}`, { type: safeType }));
-    fd.append("session_id", sessionIdRef.current);
 
     // Create AbortController so endCall can cancel this request
     const controller   = new AbortController();
@@ -448,15 +469,12 @@ export default function App() {
     }
     callStream.current = null;
 
-    // 8. Tell backend to cancel + clean up session
-    if (sessionIdRef.current) {
-      fetch(CALL_API_URL + "/end", {
-        method:  "POST",
-        headers: { "Content-Type": "application/json" },
-        body:    JSON.stringify({ session_id: sessionIdRef.current }),
-      }).catch(() => {});
-      sessionIdRef.current = null;
-    }
+    // 8. Tell backend to cancel + clean up
+    fetch(CALL_API_URL + "/end", {
+      method:  "POST",
+      headers: { "Content-Type": "application/json" },
+      body:    JSON.stringify({ session_id: "call" }),
+    }).catch(() => {});
 
     // 9. Reset UI state
     setCallState(CALL.IDLE);
@@ -482,14 +500,18 @@ export default function App() {
   };
 
   const isCallActive = callState !== CALL.IDLE;
+  const hasMessages = messages.length > 0;
 
   /* ─────────────── RENDER ─────────────── */
   return (
     <div className="page">
+      {/* Grid overlay for depth */}
+      <div className="grid-overlay" />
+
       {/* HEADER */}
       <header className="chat-header">
         <div className="header-left">
-          <div className="logo-dot" />
+          <img src="/image.png" alt="RCEE" className="header-logo" />
           <span className="header-title">RCEE Assistant</span>
         </div>
         <div className="header-right">
@@ -507,13 +529,7 @@ export default function App() {
               {busy ? "Thinking..." : "Ready"}
             </span>
           )}
-          <button
-            className="theme-toggle"
-            onClick={() => setTheme(t => t === "dark" ? "light" : "dark")}
-            title="Toggle theme"
-          >
-            {theme === "dark" ? "☀️" : "🌙"}
-          </button>
+
         </div>
       </header>
 
@@ -530,7 +546,7 @@ export default function App() {
               <div className="call-avatar-wrap">
                 <div className={`call-ring ${callState}`} />
                 <div className={`call-ring2 ${callState}`} />
-                <div className="call-avatar-inner">RCE</div>
+                <div className="call-avatar-inner"><img src="/image.png" alt="RCEE" className="call-logo-img" /></div>
               </div>
               <p className="call-status-text">
                 {callState === CALL.LISTENING  && "Speak now…"}
@@ -550,23 +566,56 @@ export default function App() {
 
       {/* CHAT AREA */}
       <div className={`chat ${isCallActive ? "call-active" : ""}`}>
-        {messages.length === 0 && !isCallActive && (
+        {/* ── WELCOME SCREEN (no messages yet) ── */}
+        {!hasMessages && !isCallActive && (
           <div className="empty-state">
             <div className="empty-avatar">
               <div className="avatar-ring" />
-              <svg width="40" height="40" viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg" style={{ zIndex: 1 }}>
-                <text x="50%" y="50%" dominantBaseline="central" textAnchor="middle"
-                  fontFamily="-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif"
-                  fontWeight="700" fontSize="13" fill="url(#lg)" letterSpacing="-0.5">RCE</text>
-                <defs>
-                  <linearGradient id="lg" x1="0" y1="0" x2="40" y2="40" gradientUnits="userSpaceOnUse">
-                    <stop stopColor="#3b82f6"/><stop offset="1" stopColor="#8b5cf6"/>
-                  </linearGradient>
-                </defs>
-              </svg>
+              <img src="/image.png" alt="RCEE" className="empty-logo-img" />
             </div>
-            <h1 className="empty-title">Hello! I'm RCEE Assistant</h1>
+
+            <h1 className="empty-title">What's on your mind today?</h1>
             <p className="empty-subtitle">Ask me anything about Ramachandra College of Engineering</p>
+
+            {/* Centered input on welcome screen */}
+            <div className="empty-input-container">
+              <div className="empty-input-bar">
+                <input
+                  value={input}
+                  onChange={e => setInput(e.target.value)}
+                  placeholder="Message RCEE Assistant..."
+                  onKeyDown={e => e.key === "Enter" && sendText()}
+                  disabled={isRecording}
+                />
+                <button
+                  className={`mic-btn ${isRecording ? "recording" : ""}`}
+                  onClick={toggleRecording}
+                  disabled={busy || isTyping || input.trim().length > 0}
+                  title={isRecording ? "Stop recording" : "Start voice"}
+                >
+                  {isRecording ? "⏹️" : "🎙️"}
+                </button>
+                <button
+                  className="call-btn"
+                  onClick={startCall}
+                  disabled={busy || isTyping || isRecording || input.trim().length > 0}
+                  title="Start voice call"
+                >
+                  📞
+                </button>
+                <button
+                  className="send-btn"
+                  onClick={() => sendText()}
+                  disabled={busy || isTyping || isRecording}
+                >
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M12 19V5M5 12l7-7 7 7" />
+                  </svg>
+                </button>
+              </div>
+            </div>
+
+            {/* Quick suggestion chips */}
             <div className="quick-chips">
               {QUICK_QUESTIONS.map(q => (
                 <button key={q} className="chip" onClick={() => sendText(q)}>{q}</button>
@@ -575,20 +624,12 @@ export default function App() {
           </div>
         )}
 
+        {/* ── MESSAGES ── */}
         {messages.map((m, i) => (
           <div key={i} className={`msg-row ${m.role}`}>
             {m.role === "assistant" && (
               <div className="msg-avatar">
-                <svg width="16" height="16" viewBox="0 0 40 40" fill="none">
-                  <text x="50%" y="50%" dominantBaseline="central" textAnchor="middle"
-                    fontFamily="-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif"
-                    fontWeight="700" fontSize="14" fill="url(#lg2)" letterSpacing="-0.5">RCE</text>
-                  <defs>
-                    <linearGradient id="lg2" x1="0" y1="0" x2="40" y2="40" gradientUnits="userSpaceOnUse">
-                      <stop stopColor="#60a5fa"/><stop offset="1" stopColor="#a78bfa"/>
-                    </linearGradient>
-                  </defs>
-                </svg>
+                <img src="/image.png" alt="RCEE" className="msg-logo-img" />
               </div>
             )}
             <div className={`msg ${m.role}${isTyping && m.role === "assistant" && i === messages.length - 1 ? " typing-active" : ""}`}>
@@ -606,7 +647,9 @@ export default function App() {
 
         {busy && (
           <div className="msg-row assistant">
-            <div className="msg-avatar">🎓</div>
+            <div className="msg-avatar">
+              <img src="/image.png" alt="RCEE" className="msg-logo-img" />
+            </div>
             <div className="msg assistant typing-bubble">
               <span className="dot"/><span className="dot"/><span className="dot"/>
             </div>
@@ -615,8 +658,8 @@ export default function App() {
         <div ref={chatEndRef} />
       </div>
 
-      {/* INPUT BAR — hidden during call */}
-      {!isCallActive && (
+      {/* INPUT BAR — shown only when there are messages and not during call */}
+      {hasMessages && !isCallActive && (
         <div className="input-bar-wrap">
           <div className="input-bar">
             <input
@@ -624,11 +667,12 @@ export default function App() {
               onChange={e => setInput(e.target.value)}
               placeholder="Ask anything about RCEE…"
               onKeyDown={e => e.key === "Enter" && sendText()}
+              disabled={isRecording}
             />
             <button
               className={`mic-btn ${isRecording ? "recording" : ""}`}
               onClick={toggleRecording}
-              disabled={busy || isTyping}
+              disabled={busy || isTyping || input.trim().length > 0}
               title={isRecording ? "Stop recording" : "Start voice"}
             >
               {isRecording ? "⏹️" : "🎙️"}
@@ -636,7 +680,7 @@ export default function App() {
             <button
               className="call-btn"
               onClick={startCall}
-              disabled={busy || isTyping}
+              disabled={busy || isTyping || isRecording || input.trim().length > 0}
               title="Start voice call"
             >
               📞
@@ -644,11 +688,10 @@ export default function App() {
             <button
               className="send-btn"
               onClick={() => sendText()}
-              disabled={busy || isTyping}
+              disabled={busy || isTyping || isRecording}
             >
               <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                <line x1="22" y1="2" x2="11" y2="13"/>
-                <polygon points="22 2 15 22 11 13 2 9 22 2"/>
+                <path d="M12 19V5M5 12l7-7 7 7" />
               </svg>
             </button>
           </div>
